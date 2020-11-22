@@ -62,7 +62,7 @@ print("***END INITIAL SETTINGS***")
 start = time.time()
 print("<<<START SIMULATION>>>")
 
-datafile = open("binsballs.da", "w")
+datafile = open("Lab1/binsballs.dat", "w")
 print("# n\tLowerbound\t3*Lowerbound\tciLow\tave\tciHigh\tRelErr", file=datafile)
 
 for n in bin.get_inputs():
