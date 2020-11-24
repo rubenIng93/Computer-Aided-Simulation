@@ -37,7 +37,7 @@ def plot_graph(input_filename,output_filename):
     # plt.show()
     plt.savefig(output_filename)
     plt.clf()
-plot_graph('Lab1/binsballs.dat','Lab1/graph-5runs.pdf')
+plot_graph('Lab1/binsballs10runs.dat','Lab1/graph-10runs.png')
 #plot_graph('binsballs-10runs.dat','graph-10runs.pdf')
 #plot_graph('binsballs-40runs.dat','graph-40runs.pdf')
 

@@ -6,7 +6,7 @@ from scipy.stats import t
 # initial settings
 seed = 2502
 confidence_level = 0.95
-runs = 5
+runs = 40
 debug = True
 
 class BinNBalls_simulator:
@@ -62,7 +62,7 @@ print("***END INITIAL SETTINGS***")
 start = time.time()
 print("<<<START SIMULATION>>>")
 
-datafile = open("Lab1/binsballs.dat", "w")
+datafile = open("Lab1/binsballs"+str(runs)+"runs.dat", "w")
 print("# n\tLowerbound\t3*Lowerbound\tciLow\tave\tciHigh\tRelErr", file=datafile)
 
 for n in bin.get_inputs():
