@@ -6,15 +6,17 @@ from scipy.stats import t
 # initial settings
 seed = 2502
 confidence_level = 0.95
-runs = 40
+runs = 5
 debug = True
+load_balancing = 4
 
 class BinNBalls_simulator:
-    def __init__(self, runs, seed, confidence_level, debug):
+    def __init__(self, runs, seed, confidence_level, debug, load_balancing):
         self.input_list = []
         self.runs = runs
         self.confidence_level = confidence_level
         self.debug = debug
+        self.load_balancing = load_balancing
         random.seed(a=seed)
 
     def create_inputs(self):
@@ -36,18 +38,34 @@ class BinNBalls_simulator:
             print("Min: {:.2f}, Ave: {:.2f}, Max: {:.2f}".format(x.min(), ave, x.max()))
         return ave, ci, rel_err
 
-    def run(self, n):
+    def run(self, n): # n is the number of bins
         maxvec = np.full(self.runs, 0)
         for run in range(self.runs):
             bins = np.full(n, 0)
             for _ in range(n):
-                bins[random.randint(0, n-1)] += 1
+                if self.load_balancing is not None:
+                    # do the load balancing problem with coefficient = load_balancing
+                    # pick at random load_balancing bins
+                    args = random.sample(range(0, n-1), self.load_balancing) #retrieve random positions of bins
+                    print(bins[args])
+                    # select and feed the least occupied
+                    arg_min_bin = np.argmin(bins[args])
+                    bins[args[arg_min_bin]] +=1
+                else:
+                    bins[random.randint(0, n-1)] += 1
             maxvec[run] = bins.max()
         ave, ci, rel_err = self.evaluate_conficence_interval(maxvec)
-        lower_bound = np.log(n) / np.log(np.log(n))
-        return n, lower_bound, 3 * lower_bound, ave - ci, ave, ave + ci, rel_err
 
-bin = BinNBalls_simulator(runs, seed, confidence_level, debug)
+        if self.load_balancing is not None:
+            theoretical = np.log(np.log(n)) / np.log(self.load_balancing)
+            return n, theoretical, ave - ci, ave, ave + ci, rel_err
+        else:    
+            lower_bound = np.log(n) / np.log(np.log(n))
+            return n, lower_bound, 3 * lower_bound, ave - ci, ave, ave + ci, rel_err
+
+
+
+bin = BinNBalls_simulator(runs, seed, confidence_level, debug, load_balancing)
 bin.create_inputs()
 
 
@@ -62,8 +80,17 @@ print("***END INITIAL SETTINGS***")
 start = time.time()
 print("<<<START SIMULATION>>>")
 
-datafile = open("Lab1/binsballs"+str(runs)+"runs.dat", "w")
-print("# n\tLowerbound\t3*Lowerbound\tciLow\tave\tciHigh\tRelErr", file=datafile)
+if load_balancing is not None:
+    modality = "_load_balancing"+str(load_balancing)
+else:
+    modality = ""
+
+datafile = open("Lab1/binsballs"+str(runs)+"runs"+modality+".dat", "w")
+if load_balancing is None:
+    print("# n\tLowerbound\t3*Lowerbound\tciLow\tave\tciHigh\tRelErr", file=datafile)
+else:
+    print("# n\tTheoretical\tciLow\tave\tciHigh\tRelErr", file=datafile)
+
 
 for n in bin.get_inputs():
     print("Running for n=", n)
