@@ -64,9 +64,13 @@ def get_all_dir_graphs():
     for file in os.listdir(os.getcwd()+"/Lab1"):
         if file.find(".dat") > 0:
             files_paths.append(file)
+    
+    # make a folder
+    if os.listdir(os.getcwd()+"/Lab1").__contains__("images") == False:
+        os.mkdir(os.getcwd()+"/Lab1/images")
 
     for file in files_paths:
-        plot_graph("Lab1/"+file, file.split(".")[0]+".png")
+        plot_graph("Lab1/"+file, "Lab1/images/"+file.split(".")[0]+".png")
 
 # if you want to plot all the charts in a single run
 get_all_dir_graphs()
