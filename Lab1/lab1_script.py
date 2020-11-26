@@ -7,8 +7,8 @@ from scipy.stats import t
 seed = 2502
 confidence_level = 0.95
 runs = 5
-debug = True
-load_balancing = 4
+debug = False
+load_balancing = None
 
 class BinNBalls_simulator:
     def __init__(self, runs, seed, confidence_level, debug, load_balancing):
@@ -17,7 +17,6 @@ class BinNBalls_simulator:
         self.confidence_level = confidence_level
         self.debug = debug
         self.load_balancing = load_balancing
-        random.seed(a=seed)
 
     def create_inputs(self):
         for i in(2,3,4,5):
@@ -39,6 +38,7 @@ class BinNBalls_simulator:
         return ave, ci, rel_err
 
     def run(self, n): # n is the number of bins
+        random.seed(a=seed)
         maxvec = np.full(self.runs, 0)
         for run in range(self.runs):
             bins = np.full(n, 0)
@@ -47,7 +47,6 @@ class BinNBalls_simulator:
                     # do the load balancing problem with coefficient = load_balancing
                     # pick at random load_balancing bins
                     args = random.sample(range(0, n-1), self.load_balancing) #retrieve random positions of bins
-                    print(bins[args])
                     # select and feed the least occupied
                     arg_min_bin = np.argmin(bins[args])
                     bins[args[arg_min_bin]] +=1
