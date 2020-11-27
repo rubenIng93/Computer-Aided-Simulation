@@ -5,7 +5,7 @@ from scipy.stats import t
 
 
 # initial parameters
-runs = 100
+runs = 1000
 seed = 22
 m_people = 23
 n_elements = 365
@@ -39,7 +39,7 @@ class BirthdayParadoxSimulator:
                 else:
                     chosen_element[rnd_element] = 1
         # return the probability of conflicts for the given setting
-        p_conflicts = float(np.sum(conflict_per_run) / self.runs) # it is also the mean
+        p_conflicts = float(np.sum(conflict_per_run) / self.runs, ) # it is also the mean
         std_dev = math.sqrt(p_conflicts * (1 - p_conflicts)) # standar deviation
         theoretical_probability = 1 - math.exp(-(m_people**2 / (2 * self.n_elements)))
         ci, rel_err = self.retrieve_ci(p_conflicts, std_dev)
@@ -52,7 +52,7 @@ sim = BirthdayParadoxSimulator(n_elements, runs, seed, ci_level)
 #print("Probability of conflicts vs theoretical: ", sim.run(m_people))
 datafile = open("Lab2/birthdayparadox"+str(n_elements)+"elements.dat", "w")
 print("# peoples\tTheoretical\tSimulations\tciLow\tciHigh\tRelErr", file=datafile)
-for m in range(1, n_elements):
+for m in range(1, 80):
     print("Running for m=", m)
     out_run = sim.run(m)
     print(*out_run, sep="\t", file=datafile)
