@@ -191,4 +191,4 @@ def comparison_graph(mode):
 # if you want to plot all the charts in a single run
 #get_all_dir_graphs()
 #comparison_graph("max_occupancy")
-comparison_graph("rel_error")
+comparison_graph("prova")
