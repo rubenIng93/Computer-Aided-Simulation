@@ -29,7 +29,7 @@ def plot_graph(input_filename,output_filename):
                 ci1.append(float(row[3])*100)
                 ci2.append(float(row[4])*100)
             
-    plt.vlines(380, linestyles='dashed', label='Conflict threshold:', colors='r', ymin=0, ymax=100)
+    #plt.vlines(380, linestyles='dashed', label='Conflict threshold:', colors='r', ymin=0, ymax=100)
     plt.plot(m, simulation, label='Simulation', marker='.')
     plt.plot(m,theory, label='Theoretical',linestyle='dotted')
     plt.fill_between(m, ci1,ci2, color='b', alpha=.1, label='95% CI')
@@ -42,4 +42,4 @@ def plot_graph(input_filename,output_filename):
     plt.savefig("Lab2/images/"+output_filename)
     plt.clf()
 
-plot_graph("Lab2/birthdayparadox100000elements.dat", "Graph10e5_1000runs_v2.png")
+plot_graph("Lab2/birthdayparadox100000elements1000runs.dat", "Graph10e5_1000runs.png")

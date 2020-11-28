@@ -45,8 +45,16 @@ class BirthdayParadoxSimulator:
         std_dev = math.sqrt(p_conflicts * (1 - p_conflicts)) # standar deviation
         theoretical_probability = 1 - math.exp(-(m_people**2 / (2 * self.n_elements)))
         ci, rel_err = self.retrieve_ci(p_conflicts, std_dev)
+        ciLow = p_conflicts - ci
+        ciHigh = p_conflicts + ci
+
+        # avoid to return probabilities > 1 or < 0
+        if ciHigh > 1.0:
+            ciHigh = 1.0
+        if ciLow <= 0.0:
+            ciLow = 0.0
         return m_people, theoretical_probability, p_conflicts,\
-                    p_conflicts - ci, p_conflicts + ci, rel_err
+                    ciLow, ciHigh, rel_err
   
 
 print("***INITIAL SETTINGS***")
@@ -61,9 +69,23 @@ print("<<<START SIMULATION>>>")
 
 sim = BirthdayParadoxSimulator(n_elements, runs, seed, ci_level)
 #print("Probability of conflicts vs theoretical: ", sim.run(m_people))
-datafile = open("Lab2/birthdayparadox"+str(n_elements)+"elements.dat", "w")
+datafile = open("Lab2/birthdayparadox"+str(n_elements)+"elements"+str(runs)+"runs.dat", "w")
 print("# peoples\tTheoretical\tSimulations\tciLow\tciHigh\tRelErr", file=datafile)
-for m in range(10, int(3*math.sqrt(n_elements)), 100):
+
+# defining the step since with more elements the simulator slows down a lot
+if n_elements == 365:
+    step = 1
+elif n_elements == 10**5:
+    if runs == 100:
+        step = 10
+    else:
+        step = 100
+else:
+    step = 100
+
+stop_value = int(3*math.sqrt(n_elements))
+
+for m in range(1, stop_value, step):
     print("Running for m=", m)
     out_run = sim.run(m)
     print(*out_run, sep="\t", file=datafile)
