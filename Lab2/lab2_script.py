@@ -98,8 +98,8 @@ elif n_elements == 10**5:
 else:
     step = 100
 
-stop_value = int(3*math.sqrt(n_elements))
-
+stop_value = int(3.5*math.sqrt(n_elements))
+#stop_value = n_elements
 
 
 for m in range(1, stop_value, step):

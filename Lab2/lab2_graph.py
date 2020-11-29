@@ -42,11 +42,10 @@ def plot_graph_probability(input_filename,output_filename):
     plt.savefig("Lab2/images/"+output_filename)
     plt.clf()
 
-'''
-def plot_graph_min_conflicts_per run(input_filename,output_filename):
+def plot_graph_min_conflicts_per_run(input_filename,output_filename):
 
     m = []
-    simulation = []
+    m_conflict = []
     ci1=[]
     ci2=[]
 
@@ -62,27 +61,20 @@ def plot_graph_min_conflicts_per run(input_filename,output_filename):
                 first_line=False
             else:
                 m.append(int(row[0]))
-                theory.append(float(row[1])*100)
-                simulation.append(float(row[2])*100)
-                ci1.append(float(row[3])*100)
-                ci2.append(float(row[4])*100)
+                m_conflict.append(float(row[7]))
+                ci1.append(float(row[6]))
+                ci2.append(float(row[8]))
             
-    #plt.vlines(380, linestyles='dashed', label='Conflict threshold:', colors='r', ymin=0, ymax=100)
-    plt.plot(m, simulation, label='Simulation', marker='.')
-    plt.plot(m,theory, label='Theoretical',linestyle='dotted')
+    plt.plot(m, m_conflict)
     plt.fill_between(m, ci1,ci2, color='b', alpha=.1, label='95% CI')
     plt.xlabel('Number of people')
-    plt.ylabel('Probability of conflicts [%]')
-    title = "Simulation vs Theoretical"
+    plt.ylabel('Minimum peoples for a conflict')
+    plt.grid()
+    title = "Minimum m for a conflict over the number of people"
     plt.title(title)
-    plt.legend()
-    # plt.show()
     plt.savefig("Lab2/images/"+output_filename)
     plt.clf()
-'''
 
 
-
-
-
-plot_graph_probability("Lab2/birthdayparadox100000elements1000runs.dat", "Graph10e5_1000runs.png")
+#plot_graph_probability("Lab2/birthdayparadox100000elements1000runs.dat", "Graph10e5_1000runs.png")
+plot_graph_min_conflicts_per_run("Lab2/birthdayparadox365elements1000runs.dat", "Conflicts365_1000runs.png")
