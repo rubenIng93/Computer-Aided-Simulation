@@ -37,13 +37,13 @@ class BirthdayParadoxSimulator:
 
         for run in range(self.runs):
             chosen_element = np.full(self.n_elements, 0)
-            for _ in range(m_people):
+            for m in range(m_people):
                 rnd_element = random.randint(0, self.n_elements-1)
                 if chosen_element[rnd_element] != 0:
                     conflict_per_run[run] = 1
                     if num_people_conflict[run] == 0:
                         # it triggers only the first time -> takes only the minimum
-                        num_people_conflict[run] = m_people
+                        num_people_conflict[run] = m
                     break
                 else:
                     chosen_element[rnd_element] = 1
