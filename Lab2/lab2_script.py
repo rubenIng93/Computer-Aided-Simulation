@@ -9,7 +9,7 @@ import time
 runs = 1000
 seed = 22
 #m_people = 23
-n_elements = 10**5
+n_elements = 365
 ci_level = 0.95
 
 class BirthdayParadoxSimulator:
@@ -24,19 +24,26 @@ class BirthdayParadoxSimulator:
         t_treshold = t.ppf((self.ci_level + 1) / 2, df= self.runs-1)
         ci = t_treshold * stddev /np.sqrt(self.runs)
         #rel_err = ci / mean
-        rel_err = 0
+        rel_err = 0 # must be restored
         return ci, rel_err
 
     def run(self, m_people):
         random.seed(a=self.seed)
         # initialize the vector of n element with all 0
-        conflict_per_run = np.full(self.runs, 0)        
+        conflict_per_run = np.full(self.runs, 0)
+        # vector that computes the whether there's a conflict
+        # for the number m of people
+        num_people_conflict = np.full(self.runs, 0)    
+
         for run in range(self.runs):
             chosen_element = np.full(self.n_elements, 0)
             for _ in range(m_people):
                 rnd_element = random.randint(0, self.n_elements-1)
                 if chosen_element[rnd_element] != 0:
                     conflict_per_run[run] = 1
+                    if num_people_conflict[run] == 0:
+                        # it triggers only the first time -> takes only the minimum
+                        num_people_conflict[run] = m_people
                     break
                 else:
                     chosen_element[rnd_element] = 1
@@ -48,13 +55,21 @@ class BirthdayParadoxSimulator:
         ciLow = p_conflicts - ci
         ciHigh = p_conflicts + ci
 
+        # minimum m_people for conflicts part
+        min_m_mean = np.sum(num_people_conflict) / self.runs
+        min_m_stddev = np.std(num_people_conflict)
+        min_m_ci, min_m_rel_err = self.retrieve_ci(min_m_mean, min_m_stddev)
+        min_m_cilow = min_m_mean - min_m_ci
+        min_m_cihigh = min_m_mean + min_m_ci
+
         # avoid to return probabilities > 1 or < 0
         if ciHigh > 1.0:
             ciHigh = 1.0
         if ciLow <= 0.0:
             ciLow = 0.0
         return m_people, theoretical_probability, p_conflicts,\
-                    ciLow, ciHigh, rel_err
+                    ciLow, ciHigh, rel_err, min_m_cilow, min_m_mean, \
+                        min_m_cihigh, min_m_rel_err
   
 
 print("***INITIAL SETTINGS***")
@@ -70,7 +85,7 @@ print("<<<START SIMULATION>>>")
 sim = BirthdayParadoxSimulator(n_elements, runs, seed, ci_level)
 #print("Probability of conflicts vs theoretical: ", sim.run(m_people))
 datafile = open("Lab2/birthdayparadox"+str(n_elements)+"elements"+str(runs)+"runs.dat", "w")
-print("# peoples\tTheoretical\tSimulations\tciLow\tciHigh\tRelErr", file=datafile)
+print("# peoples\tTheoretical\tSimulations\tciLow\tciHigh\tRelErr\tciLowPeople\tmeanPeople\tciHighPeople\tpeopleRelErr", file=datafile)
 
 # defining the step since with more elements the simulator slows down a lot
 if n_elements == 365:
@@ -84,6 +99,8 @@ else:
     step = 100
 
 stop_value = int(3*math.sqrt(n_elements))
+
+
 
 for m in range(1, stop_value, step):
     print("Running for m=", m)
