@@ -9,7 +9,7 @@ import time
 runs = 1000
 seed = 22
 #m_people = 23
-n_elements = 365
+n_elements = 10**6
 ci_level = 0.95
 
 class BirthdayParadoxSimulator:
