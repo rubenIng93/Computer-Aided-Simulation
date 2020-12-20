@@ -50,7 +50,7 @@ print("\nThe number of bits needed for get a probability\n of fingerprint collis
 # THEORETICAL STORAGE
 # for the fingerprint set we have to store b_exp bits for each word
 # a good avg size for a string could be 50 bytes
-fing_set_theory_storage = w * 2**b_exp / 8 # this bytes
+fing_set_theory_storage = w * b_exp / 8 # this bytes
 words_set_theory_storage = w * 50 # this is in bytes
 print("\nTheoretical storage for words set = {:.2f} KB".format(words_set_theory_storage/1024))
 print("Theoretical storage for {}-fingerprint set = {:.2f} KB".format(b_exp, fing_set_theory_storage/1024))
@@ -77,9 +77,11 @@ print("\nTo resume:\n")
 df = pd.DataFrame(data={'Storage':['Word set', 'Fingerprint set'],
                         'Bits per fingerprint':['N.A.', b_exp],
                         'Prob. false positive [%]':['N.A.', p_false_positive*100],
-                        'Min theoretical memory [KB]':[words_set_theory_storage/1024, fing_set_theory_storage/(1024*8)],
+                        'Min theoretical memory [KB]':[words_set_theory_storage/1024, fing_set_theory_storage/(1024)],
                         'Actual memory [KB]':[string_set_storage/1024, hash_set_storage/1024]}, 
                 )
 
 print(df.set_index('Storage'))
+
+
 
