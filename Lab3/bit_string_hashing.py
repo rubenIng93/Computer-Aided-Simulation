@@ -51,7 +51,7 @@ for n_bits in b:
         bit_string_array[h] = 1 # add h in the set
     # test prob of false positive
     ba_size = asizeof.asizeof(bit_string_array) # get the size
-    size_list.append(ba_size) # append it in order to save the output
+    size_list.append(ba_size/1024) # append it in order to save the output in kb
     run_means = np.zeros(runs) # list with means of the runs
     for run in range(runs):
         fp_counter = 0
@@ -71,11 +71,11 @@ for n_bits in b:
     print(f"Bit String Array size with 2^{n_bits} bits allocated = {ba_size/1024:.2f} KB")
 
 datafile_sim = open(f"Lab3/BitstringHash{runs}runs.dat", "w") # open an empty file
-print("#bits\tciLow\tP(FP)\tciHigh", file=datafile_sim)
+print("#bits\tciLow\tP(FP)\tciHigh\tsize(KB)", file=datafile_sim)
 for i in range(len(b)):
     print(b[i], false_positive_prob_means[i] - false_positive_prob_cis[i],\
         false_positive_prob_means[i], false_positive_prob_means[i] + false_positive_prob_cis[i],\
-            sep="\t", file=datafile_sim)
+            size_list[i], sep="\t", file=datafile_sim)
 datafile_sim.close()
 
 
