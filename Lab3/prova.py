@@ -1,6 +1,10 @@
-import numpy as np
-a = [1, 1, 1, 1, 0, 0]
-arr = np.array(a)
-idx = [1,3]
-if arr[idx].all() == 1:
-    print('ok')
+import math
+
+# question 9
+#
+# 1 MB = 1024 KB = 1048576 Bytes = 8388608 bits
+# #
+
+b = math.log2(8388608)
+
+print('Fingerprinting bytes = ', b)

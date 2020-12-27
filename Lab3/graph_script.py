@@ -5,6 +5,7 @@ import os
 def plot_graph_probability(input_filename,output_filename):
 
     b = []
+    analytical = []
     mean = []
     ci1=[]
     ci2=[]
@@ -21,11 +22,13 @@ def plot_graph_probability(input_filename,output_filename):
                 first_line=False
             else:
                 b.append(int(row[0]))
-                ci1.append(float(row[1]))
-                mean.append(float(row[2]))
-                ci2.append(float(row[3]))
+                analytical.append(float(row[1]))
+                ci1.append(float(row[2]))
+                mean.append(float(row[3]))
+                ci2.append(float(row[4]))
             
     plt.plot(b, mean, label='Mean P(FP)', marker='.')
+    plt.plot(b, analytical, label='analytical approach', marker='.')
     plt.fill_between(b, ci1, ci2, color='b', alpha=.1, label='95% CI')
     plt.xlabel('Number of bit used for the bit-string')
     plt.ylabel('Probability of False Positive [%]')
@@ -55,7 +58,7 @@ def plot_size_graph(input_filename,output_filename):
                 first_line=False
             else:
                 b.append(int(row[0]))
-                size.append(float(row[4]))
+                size.append(float(row[5]))
             
     plt.plot(b, size, marker='.')
     plt.xlabel('Number of bit used for the bit-string')
@@ -88,10 +91,10 @@ def plot_graph_probability_bloom(input_filename,output_filename):
                 first_line=False
             else:
                 b.append(int(row[0]))
-                ci1.append(float(row[6]))
-                mean.append(float(row[7]))
-                ci2.append(float(row[8]))
-                theory.append(float(row[9]))
+                ci1.append(float(row[7]))
+                mean.append(float(row[8]))
+                ci2.append(float(row[9]))
+                theory.append(float(row[10]))
             
     plt.plot(b, mean, label='Mean P(FP)', marker='.')
     plt.plot(b, theory, label='Theoretical P(FP)', marker='.')
@@ -124,7 +127,7 @@ def plot_kopt_vs_bits(input_filename,output_filename):
                 first_line=False
             else:
                 b.append(int(row[0]))
-                k_opt.append(float(row[5]))                
+                k_opt.append(float(row[6]))                
             
     plt.plot(b, k_opt, marker='.')
     plt.xlabel('Number of bit used for the bit-string')
@@ -140,7 +143,7 @@ def plot_kopt_vs_bits(input_filename,output_filename):
 
 
 
-plot_graph_probability('Lab3/BitstringHash100runs.dat', 'probability_chart.png')
-plot_graph_probability_bloom('Lab3/BitstringHash100runs.dat', 'bf_prob_chart.png')
-plot_size_graph('Lab3/BitstringHash100runs.dat', 'size_chart.png')
-plot_kopt_vs_bits('Lab3/BitstringHash100runs.dat', 'k_opt_chart.png')
+plot_graph_probability('Lab3/lab3100runs.dat', 'probability_chart.png')
+plot_graph_probability_bloom('Lab3/lab3100runs.dat', 'bf_prob_chart.png')
+plot_size_graph('Lab3/lab3100runs.dat', 'size_chart.png')
+plot_kopt_vs_bits('Lab3/lab3100runs.dat', 'k_opt_chart.png')

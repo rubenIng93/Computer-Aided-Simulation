@@ -46,8 +46,13 @@ def compute_all_hashes(md5, num_hashes, b):
 
 with open("Lab3/words_alpha.txt", "r") as txt:
     words = csv.reader(txt)
+    flag = False
     for line in words:
         words_set.add(line[0])
+        if flag == False and w > 19500:
+            if asizeof.asizeof(words_set) > 1048576:
+                one_MB_bound = w
+                flag = True
         w += 1
 
 print("We have to deal with {} words".format(w))
@@ -55,12 +60,14 @@ print("We have to deal with {} words".format(w))
 start = time.time()
 false_positive_prob_means = []
 false_positive_prob_cis = []
+bs_fp_probabilities_analytical = []
 bf_false_positive_prob_means = []
 bf_false_positive_prob_cis = []
 size_list = []
 bloom_size_list = []
 k_opt_list = []
 theorical_fp_prob_list = []
+theoretical_bf_size_list = []
 
 random.seed(seed)
 
@@ -70,11 +77,11 @@ for n_bits in b:
     k_opt = get_k_opt(n_bits, w)
     k_opt_list.append(int(k_opt)) #rounded at the first integer
 
-    theorical_fp_prob = (1 - math.e ** (-k_opt*w/2**n_bits))**k_opt
+    theorical_fp_prob = (1 - math.e ** (-k_opt*w/2**n_bits))**k_opt # for bloom filter
     theorical_fp_prob_list.append(theorical_fp_prob*100)
     
-    bit_string_array = np.zeros(2**n_bits) # initialize the bitstring array with all zero
-    bloom_filter = np.zeros(2**n_bits) # initialize the bloom filter with all zero
+    bit_string_array = np.zeros(2**n_bits, dtype=bool) # initialize the bitstring array with all zero
+    bloom_filter = np.zeros(2**n_bits, dtype=bool) # initialize the bloom filter with all zero
 
     for word in words_set:
         word_hash = hashlib.md5(word.encode("utf-8")) # md5 hash
@@ -85,12 +92,16 @@ for n_bits in b:
         bloom_filter[all_bits_to_update] = 1 # set the bits to 1 for BF
 
     # test prob of false positive
+    bs_fp_probability = (np.sum(bit_string_array) / 2 ** n_bits) * 100 # analytical fp prob bitstring
+    analytical_prob_bf = (np.sum(bloom_filter)/(2**n_bits))**k_opt # analytical fp prob bloom filter
     ba_size = asizeof.asizeof(bit_string_array) # get the size
-    bf_size = asizeof.asizeof(bloom_filter)
+    bf_size = asizeof.asizeof(bloom_filter) # get the size
+    bs_fp_probabilities_analytical.append(bs_fp_probability) # append in the list
     size_list.append(ba_size/1024) # append it in order to save the output in kb
     bloom_size_list.append(bf_size/1024) # append the size of BF in kb
     run_means = np.zeros(runs) # list with means of the runs
     bf_run_means = np.zeros(runs) # list with means of the runs for BF
+    
 
     for run in range(runs):
         fp_counter = 0 # false positive counter for bitstring
@@ -122,21 +133,33 @@ for n_bits in b:
     ci_bf = retrieve_ci(mean_bf, std_bf) # retrieve the CI
     bf_false_positive_prob_means.append(mean_bf*100)
     bf_false_positive_prob_cis.append(ci_bf*100)
+    theoretical_bf_size = w * 1.44 * math.log2(1/theorical_fp_prob) # theoretical size for bloom filter in bits
+    theoretical_bf_size_list.append(theoretical_bf_size/(1024*8)) # append in kb
 
     if debug:
+        print('>>>BITSTRING')
         print(f'Bitstring fp for {n_bits}bits = {mean*100}% (mean value)')
+        print(f'Bitstring analytical fp prob. for {n_bits} = {bs_fp_probability}%')
+        print(f'Bitstring actual size = {ba_size/1024} kb')
+        
+        print('>>>BLOOM FILTER')
+        print(f'Bloom filter analytical fp for {n_bits}bits = {analytical_prob_bf*100}% (mean value)')
         print(f'Bloom filter fp for {n_bits}bits = {mean_bf*100}% (mean value)')
-        print(f'Bloom filter theory fp for {n_bits}bits = {theorical_fp_prob*100}%\n')
-    
+        print(f'Bloom filter theory fp for {n_bits}bits = {theorical_fp_prob*100}%')
+        print(f'Bloom filter theoretical size = {theoretical_bf_size/(1024*8)} kb')
+        print(f'Bloom filter actual size = {bf_size/1024} kb')
+        print('\n')
+
 
     #print(f"P(FP) = {fp_counter/fp_attempt*100:.2f}% for 2^{n_bits} bits allocated")
     #print(f"Bit String Array size with 2^{n_bits} bits allocated = {ba_size/1024:.2f} KB")
     #print(f"Bloom filter size with 2^{n_bits} bits allocated = {bf_size/1024:.2f} KB")
 
-datafile_sim = open(f"Lab3/BitstringHash{runs}runs.dat", "w") # open an empty file
-print("#bits\tciLow\tP(FP)\tciHigh\tsize(KB)\tkopt\tBFciLow\tBFp(FP)\tBFciHigh\tTHfpProb", file=datafile_sim)
+datafile_sim = open(f"Lab3/lab3{runs}runs.dat", "w") # open an empty file
+print("#bits\tanalyticalFPBS\tciLow\tP(FP)\tciHigh\tsize(KB)\tkopt\tBFciLow\tBFp(FP)\tBFciHigh\tTHfpProb\tBFsize(KB)", file=datafile_sim)
 for i in range(len(b)):
     print(b[i], # nbits
+        bs_fp_probabilities_analytical[i], # fp prob analytical approach bitstring
         false_positive_prob_means[i] - false_positive_prob_cis[i], # ccLow bitstring
         false_positive_prob_means[i], # mean bitstring
         false_positive_prob_means[i] + false_positive_prob_cis[i], # ciHigh bitstring
@@ -146,8 +169,55 @@ for i in range(len(b)):
         bf_false_positive_prob_means[i], # mean bloom filter
         bf_false_positive_prob_means[i] + bf_false_positive_prob_cis[i], # ciHigh bloom filter
         theorical_fp_prob_list[i], # theoretical fp prob for bloom filter
+        bloom_size_list[i], # bloom filter size
+        theoretical_bf_size_list[i], # theoretical bf size
         sep="\t", file=datafile_sim)
 datafile_sim.close()
+
+
+print("\nTo resume:\n")
+pd.set_option('display.float_format', lambda x: '%.8f' % x)
+df = pd.DataFrame(data={
+                        'Bits per fingerprint':b,
+                        'Optimal # hash functions:':k_opt_list,
+                        'Prob. false positive [%]':theorical_fp_prob_list,
+                        'Min theoretical memory [KB]':theoretical_bf_size_list,
+                        'Actual memory [KB]':bloom_size_list}
+                )
+
+print(df.set_index('Bits per fingerprint'))
+
+# question 9
+#
+# 1 MB = 1024 KB = 1048576 Bytes = 8388608 bits
+# 
+# reversing the formula for bitstring we have
+# b = log2(n) where n is the total storage for bitstring array
+# 
+# same for bloom filter#
+
+one_MB_bits = math.log2(8388608)
+
+print(f"\nHaving 1MB available for the dictionary set membership problem\n\
+    corresponds to the case with {one_MB_bits} bits for the fingerprinting\n")
+
+# Computation for bits allocated for fingerprint table
+# 8388608 bits = 370103 * b
+b_finger = 8388608 / w
+b_finger = math.floor(b_finger) # round to the floor integer
+print('Bits allocated for each fingerprint = ', b_finger)
+n = 2 ** b_finger # get n 
+finger_fp_prob = (1-(1-(1/n))**w) * 100 # compute the false positive probability
+
+print('\n')
+df = pd.DataFrame(data={
+                        'Storage':['Words set', 'Fingerprint set', 'Bitstring array', 'Bloom filter'],
+                        'Prob. false positive':[f'It stores {one_MB_bound} words', str(finger_fp_prob)+'%', '4.3161%', '0.0019%'],
+                        }
+                )
+
+print(df.set_index('Storage'))
+
 
 
 

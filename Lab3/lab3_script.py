@@ -22,7 +22,7 @@ start = time.time()
 
 fingerprint_set = set() # initialize the set       
 size_empty_set = asizeof.asizeof(fingerprint_set)
-for b in range(1, w):
+for b in range(20, w): # 20 is a good starting number
     for word in words_set:
         word_hash = hashlib.md5(word.encode("utf-8")) # md5 hash
         word_hash = int(word_hash.hexdigest(), 16) # cast integer format
