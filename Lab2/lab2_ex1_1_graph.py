@@ -6,6 +6,7 @@ import os
 
 def plot_graph(input_filename,output_filename):
 
+    # instantiate all the useful lists
     n = []
     ave = []
     lower_bound=[]
@@ -60,19 +61,19 @@ def plot_graph(input_filename,output_filename):
     plt.savefig(output_filename)
     plt.clf()
 
-def get_all_dir_graphs():
+def get_all_binsnballs_graphs():
     # find the .dat files
     files_paths = []
-    for file in os.listdir(os.getcwd()+"/Lab1"):
-        if file.find(".dat") > 0:
-            files_paths.append(file)
+    for _file in os.listdir(os.getcwd()+"/Lab2"):
+        if _file.find("binsball") > 0:
+            files_paths.append(_file)
     
     # make a folder
-    if os.listdir(os.getcwd()+"/Lab1").__contains__("images") == False:
-        os.mkdir(os.getcwd()+"/Lab1/images")
+    if os.listdir(os.getcwd()+"/Lab2").__contains__("images") == False:
+        os.mkdir(os.getcwd()+"/Lab2/images")
 
-    for file in files_paths:
-        plot_graph("Lab1/"+file, "Lab1/images/"+file.split(".")[0]+".png")
+    for _file in files_paths:
+        plot_graph("Lab2/"+_file, "Lab2/images/"+_file.split(".")[0]+".png")
 
 def comparison_graph(mode):
     # mode can be relative errors or max occupancy
@@ -83,7 +84,7 @@ def comparison_graph(mode):
         ci1 = []
         ci2 = []
         # random dropping
-        with open("Lab1/binsballs10runs.dat",'r') as csvfile:
+        with open("Lab2/binsballs10runs.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -103,7 +104,7 @@ def comparison_graph(mode):
         ave = []
         ci1 = []
         ci2 = []
-        with open("Lab1/binsballs10runs_load_balancing2.dat",'r') as csvfile:
+        with open("Lab2/binsballs10runs_load_balancing2.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -120,7 +121,7 @@ def comparison_graph(mode):
         ave = []
         ci1 = []
         ci2 = []
-        with open("Lab1/binsballs10runs_load_balancing4.dat",'r') as csvfile:
+        with open("Lab2/binsballs10runs_load_balancing4.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -136,14 +137,14 @@ def comparison_graph(mode):
         plt.ylim(bottom=0, top=10)
         plt.legend()
         plt.title("Comparison between policies")
-        plt.savefig("Lab1/images/Max_occupancy_comparison.png")
+        plt.savefig("Lab2/images/Max_occupancy_comparison.png")
         plt.clf() 
 
     elif mode == 'rel_error':
         # this branch compares among different num of runs for the random dropping policy
         rel_err = []
         # 5 runs
-        with open("Lab1/binsballs5runs.dat",'r') as csvfile:
+        with open("Lab2/binsballs5runs.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -158,7 +159,7 @@ def comparison_graph(mode):
         plt.ylabel('Relative error %')
         # 10 runs
         rel_err = []
-        with open("Lab1/binsballs10runs.dat",'r') as csvfile:
+        with open("Lab2/binsballs10runs.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -170,7 +171,7 @@ def comparison_graph(mode):
         plt.plot(n,rel_err, label='10 Runs',marker='.')
         # 40 runs
         rel_err = []
-        with open("Lab1/binsballs40runs.dat",'r') as csvfile:
+        with open("Lab2/binsballs40runs.dat",'r') as csvfile:
             plots = csv.reader(csvfile, delimiter='\t')
             first_line=True
             for row in plots:
@@ -183,12 +184,13 @@ def comparison_graph(mode):
         plt.ylim(bottom=0)
         plt.legend()
         plt.title("Comparison between number of runs")
-        plt.savefig("Lab1/images/N_runs_comparison.png")
+        plt.savefig("Lab2/images/N_runs_comparison.png")
         plt.clf()
     else:
         print('As mode insert "max_occupancy" or "rel_error"')
         return
+
 # if you want to plot all the charts in a single run
-#get_all_dir_graphs()
-#comparison_graph("max_occupancy")
-comparison_graph("prova")
+get_all_binsnballs_graphs()
+comparison_graph("max_occupancy")
+comparison_graph("rel_error")

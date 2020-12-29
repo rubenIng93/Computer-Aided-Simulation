@@ -205,7 +205,7 @@ print(f"\nHaving 1MB available for the dictionary set membership problem\n\
 # 8388608 bits = 370103 * b
 b_finger = 8388608 / w
 b_finger = math.floor(b_finger) # round to the floor integer
-print('Bits allocated for each fingerprint = ', b_finger)
+print('Bits allocated for each fingerprint stored in a table = ', b_finger)
 n = 2 ** b_finger # get n 
 finger_fp_prob = (1-(1-(1/n))**w) * 100 # compute the false positive probability
 
