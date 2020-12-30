@@ -15,7 +15,7 @@ epsilon = 0.5
 fake_attempt = 10
 seed = 22
 runs = 10
-debug = True
+debug = False
 # generation of the parameter x
 b = [19, 20, 21, 22, 23, 24]
 ci_level = 0.95
@@ -101,22 +101,21 @@ for n_bits in b:
     bloom_size_list.append(bf_size/1024) # append the size of BF in kb
     run_means = np.zeros(runs) # list with means of the runs
     bf_run_means = np.zeros(runs) # list with means of the runs for BF
-    
 
     for run in range(runs):
         fp_counter = 0 # false positive counter for bitstring
         fp_bf_counter = 0 # false positive counter for bloof filter
         for _ in range(fake_attempt):
             wrong_h_list = []
-            for _ in range(k_opt):
+            for _ in range(k_opt): # generate k_opt fake hash
                 wrong_h = random.randint(0, 2**n_bits-1) # generate a fake hash
-                wrong_h_list.append(wrong_h)
+                wrong_h_list.append(wrong_h)         
 
-            if bit_string_array[wrong_h_list[0]] == 1:
+            if bit_string_array[wrong_h_list[0]] == 1: # test bitstring
                 fp_counter += 1 # conflitc happens
-            if bloom_filter[wrong_h_list].all() == 1: # all the bits are 1
+            if bloom_filter[wrong_h_list].all() == 1: # all the bits are 1 in bloom filter
                 fp_bf_counter += 1 # conflitc happens
-
+            
         run_means[run] = fp_counter/fake_attempt # save the run's mean
         bf_run_means[run] = fp_bf_counter/fake_attempt
 
@@ -135,6 +134,7 @@ for n_bits in b:
     bf_false_positive_prob_cis.append(ci_bf*100)
     theoretical_bf_size = w * 1.44 * math.log2(1/theorical_fp_prob) # theoretical size for bloom filter in bits
     theoretical_bf_size_list.append(theoretical_bf_size/(1024*8)) # append in kb
+
 
     if debug:
         print('>>>BITSTRING')
@@ -155,6 +155,7 @@ for n_bits in b:
     #print(f"Bit String Array size with 2^{n_bits} bits allocated = {ba_size/1024:.2f} KB")
     #print(f"Bloom filter size with 2^{n_bits} bits allocated = {bf_size/1024:.2f} KB")
 
+# write a file with the measures obtained
 datafile_sim = open(f"Lab3/lab3{runs}runs.dat", "w") # open an empty file
 print("#bits\tanalyticalFPBS\tciLow\tP(FP)\tciHigh\tsize(KB)\tkopt\tBFciLow\tBFp(FP)\tBFciHigh\tTHfpProb\tBFsize(KB)", file=datafile_sim)
 for i in range(len(b)):
@@ -174,7 +175,7 @@ for i in range(len(b)):
         sep="\t", file=datafile_sim)
 datafile_sim.close()
 
-
+# display result in a pandas dataframe
 print("\nTo resume:\n")
 pd.set_option('display.float_format', lambda x: '%.8f' % x)
 df = pd.DataFrame(data={
@@ -212,11 +213,12 @@ finger_fp_prob = (1-(1-(1/n))**w) * 100 # compute the false positive probability
 print('\n')
 df = pd.DataFrame(data={
                         'Storage':['Words set', 'Fingerprint set', 'Bitstring array', 'Bloom filter'],
-                        'Prob. false positive':[f'It stores {one_MB_bound} words', str(finger_fp_prob)+'%', '4.3161%', '0.0019%'],
+                        'Prob. false positive':[f'It stores {one_MB_bound} words', str(round(finger_fp_prob, 4))+'%', '4.3161%', '0.0019%'],
                         }
                 )
 
 print(df.set_index('Storage'))
+
 
 
 
