@@ -94,11 +94,11 @@ for n_bits in b:
     # test prob of false positive
     bs_fp_probability = (np.sum(bit_string_array) / 2 ** n_bits) * 100 # analytical fp prob bitstring
     analytical_prob_bf = (np.sum(bloom_filter)/(2**n_bits))**k_opt # analytical fp prob bloom filter
-    ba_size = asizeof.asizeof(bit_string_array) # get the size
-    bf_size = asizeof.asizeof(bloom_filter) # get the size
+    ba_size = asizeof.asizeof(bit_string_array) # get the size in bytes
+    
     bs_fp_probabilities_analytical.append(bs_fp_probability) # append in the list
     size_list.append(ba_size/1024) # append it in order to save the output in kb
-    bloom_size_list.append(bf_size/1024) # append the size of BF in kb
+    
     run_means = np.zeros(runs) # list with means of the runs
     bf_run_means = np.zeros(runs) # list with means of the runs for BF
 
@@ -132,6 +132,9 @@ for n_bits in b:
     ci_bf = retrieve_ci(mean_bf, std_bf) # retrieve the CI
     bf_false_positive_prob_means.append(mean_bf*100)
     bf_false_positive_prob_cis.append(ci_bf*100)
+    
+    bf_size = asizeof.asizeof(bloom_filter) # get the BF size in bytes
+    bloom_size_list.append(bf_size/1024) # append the size of BF in kb
     theoretical_bf_size = w * 1.44 * math.log2(1/theorical_fp_prob) # theoretical size for bloom filter in bits
     theoretical_bf_size_list.append(theoretical_bf_size/(1024*8)) # append in kb
 
@@ -199,14 +202,14 @@ print(df.set_index('Bits per fingerprint'))
 
 one_MB_bits = math.log2(8388608)
 
-print(f"\nHaving 1MB available for the dictionary set membership problem\n\
+print(f"\n\nHaving 1MB available for the dictionary set membership problem\n\
     corresponds to the case with {one_MB_bits} bits for the fingerprinting\n")
 
 # Computation for bits allocated for fingerprint table
 # 8388608 bits = 370103 * b
 b_finger = 8388608 / w
 b_finger = math.floor(b_finger) # round to the floor integer
-print('Bits allocated for each fingerprint stored in a table = ', b_finger)
+print('\nBits allocated for each fingerprint stored in a table = ', b_finger)
 n = 2 ** b_finger # get n 
 finger_fp_prob = (1-(1-(1/n))**w) * 100 # compute the false positive probability
 
