@@ -7,18 +7,33 @@ import pandas as pd
 # useful variables
 runs = 10
 sim_time = 1000
-mu_service = 2 # service rate, parameter of the exp distribution
+mu_service = 4 # service rate, parameter of the exp distribution
+uni_param = {'a': 1, 'b':4 } # parameter for the uniform distribution of the service time
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
+confidence_level = 0.95
+uniform = False
+
+if uniform:
+    mean = (uni_param['a'] + uni_param['b']) / 2
+    load = mean / lambda_arrival
+else:
+    load = mu_service/lambda_arrival
+
+# DATA STRUCTURES FOR MULTIPLE RUNS
 running_data = [] # keep track of the n runs statistics
 running_users = [] # keep track of the users during each run
 running_len_queue = [] # keep track the actual sizes
-confidence_level = 0.95
-
-
 # print the initial settings
+
 print('*'*10 +' INITIAL SETTINGS '+10*'*')
+if uniform:
+    print(f'Service times uniformly distributed ({uni_param})')
+else:
+    print(f'Service times exponentially distributed ({1/mu_service})')
+    
+print(f'Load: {load * 100} %')
 print(f'Simulation time: {sim_time}')
-print(f'# Runs: {runs}\nArrival rate: {1/lambda_arrival}\nService rate: {1/mu_service}')
+print(f'# Runs: {runs}\nArrival rate: {1/lambda_arrival}')
 print(f'Confidence level: {confidence_level*100} %\n')
 print(40 * '*')
 
@@ -56,8 +71,11 @@ def arrival(time, FES, queue):
 
     # if the server is idle start a new service
     if users == 1:
-        # sample the service time
-        service_time = random.expovariate(1/mu_service)
+        # sample the service time uniform or exp
+        if uniform:
+            service_time = 1/random.uniform(uni_param['a'], uni_param['b'])
+        else:
+            service_time = random.expovariate(1/mu_service)
         # schedule the departure
         FES.put((time + service_time, 'departure'))
 
@@ -79,8 +97,12 @@ def departure(time, FES, queue):
 
     # check whether there are more clients to in the queue
     if users > 0:
-        # sample the service time
-        service_time = random.expovariate(1.0/mu_service)
+        # sample the service time ecp or uniform
+        if uniform:
+            service_time = 1/random.uniform(uni_param['a'], uni_param['b'])
+        else:
+            service_time = random.expovariate(1/mu_service)
+
         # schedule the departure of the client
         FES.put((time + service_time, "departure"))
 
@@ -159,6 +181,15 @@ print("\n","*"*10,"  MEASUREMENTS  ","*"*10,"\n")
 print(df.set_index('MEASURES'))
 print("\n","*"*40)
 
+# SAVE IT IN A FILE
+options = {
+    'sep': '\t',
+    'index': 'MEASURES'    
+}
+if uniform: 
+    df.to_csv('Lab1/uni_service.csv', **options)
+else: 
+    df.to_csv('Lab1/exp_service.csv', **options)
 
 # PRINT COMPARISON THEORICAL/EMPIRICAL
 print("\n","*"*10,"  COMPARISON THEORICAL/EMPIRICAL  ","*"*10,"\n")
