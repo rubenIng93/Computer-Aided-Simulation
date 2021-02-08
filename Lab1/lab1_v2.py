@@ -9,6 +9,7 @@ runs = 10
 sim_time = 1000
 mu_service = 4.5 # service rate, parameter of the exp distribution
 uni_param = {'a':1, 'b': 8.8} # parameter for the uniform distribution of the service time
+# for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
 uniform = True
