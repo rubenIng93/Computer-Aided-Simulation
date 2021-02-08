@@ -7,15 +7,16 @@ import pandas as pd
 # useful variables
 runs = 10
 sim_time = 1000
-mu_service = 4 # service rate, parameter of the exp distribution
-uni_param = {'a': 1, 'b':4 } # parameter for the uniform distribution of the service time
+mu_service = 4.5 # service rate, parameter of the exp distribution
+uni_param = {'a':1, 'b': 8.8} # parameter for the uniform distribution of the service time
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-uniform = False
+uniform = True
 
 if uniform:
     mean = (uni_param['a'] + uni_param['b']) / 2
     load = mean / lambda_arrival
+    mu_service = mean
 else:
     load = mu_service/lambda_arrival
 
@@ -73,7 +74,7 @@ def arrival(time, FES, queue):
     if users == 1:
         # sample the service time uniform or exp
         if uniform:
-            service_time = 1/random.uniform(uni_param['a'], uni_param['b'])
+            service_time = random.uniform(uni_param['a'], uni_param['b'])
         else:
             service_time = random.expovariate(1/mu_service)
         # schedule the departure
@@ -97,9 +98,9 @@ def departure(time, FES, queue):
 
     # check whether there are more clients to in the queue
     if users > 0:
-        # sample the service time ecp or uniform
+        # sample the service time exp or uniform
         if uniform:
-            service_time = 1/random.uniform(uni_param['a'], uni_param['b'])
+            service_time = random.uniform(uni_param['a'], uni_param['b'])
         else:
             service_time = random.expovariate(1/mu_service)
 
@@ -115,6 +116,19 @@ def evaluate_conficence_interval(values):
     ci = t_treshold * stddev /np.sqrt(runs)
     rel_err = ci/ ave
     return ave, ci, rel_err
+
+# function that derives E[N] and E[T] for the uniform distribution selected
+def pollaczek_khintchin(uni_dict):
+
+    # compute the coefficient of variation
+    var = (uni_dict['b'] - uni_dict['a'])**2 / 12
+    c = var / mean**2
+
+    E_N = (1/lambda_arrival)*mean + ((1/lambda_arrival)*mean)**2 * (1+c)/(2*(1-mean/lambda_arrival))
+    E_T = E_N / (1/lambda_arrival)
+
+    return E_N, E_T
+
 
 # SETTING THE SEED
 random.seed(22)
@@ -169,11 +183,12 @@ avg_arr, ci_arr, err_arr = evaluate_conficence_interval(arrivals) # arrivals
 avg_len_queue, ci_len_queue, err_len_queue = evaluate_conficence_interval(np.array(running_len_queue)) # residual queue
 
 # PRINT OUTPUT ORGANIZED IN PANDAS DATAFRAME
+
 df = pd.DataFrame(data={
     'MEASURES':['Res users', 'Avg users', 'Arrivals', 'Departures', 'Delay','Res queue'],
-    'Lower bound':[avg_tot_users-ci_tot_users, avg_us-ci_users, avg_arr-ci_arr, avg_dep-ci_dep, avg_delays-ci_delays, avg_len_queue-ci_len_queue],
-    'Mean':[avg_tot_users, avg_us, avg_arr, avg_dep, avg_delays, avg_len_queue],
-    'Upper bound':[avg_tot_users+ci_tot_users, avg_us+ci_users, avg_arr+ci_arr, avg_dep+ci_dep, avg_delays+ci_delays, avg_len_queue+ci_len_queue],
+    'Lower bound':[avg_tot_users-ci_tot_users, (avg_us-ci_users)/sim_time, avg_arr-ci_arr, avg_dep-ci_dep, avg_delays-ci_delays, avg_len_queue-ci_len_queue],
+    'Mean':[avg_tot_users, avg_us/sim_time, avg_arr, avg_dep, avg_delays, avg_len_queue],
+    'Upper bound':[avg_tot_users+ci_tot_users, (avg_us+ci_users)/sim_time, avg_arr+ci_arr, avg_dep+ci_dep, avg_delays+ci_delays, avg_len_queue+ci_len_queue],
     'Relative error':[err_tot_users, err_users, err_arr, err_dep, err_delays, err_len_queue]
 })
 
@@ -187,19 +202,23 @@ options = {
     'index': 'MEASURES'    
 }
 if uniform: 
-    df.to_csv('Lab1/uni_service.csv', **options)
+    df.to_csv(f'Lab1/uni_service_{int(load*100)}load.csv', **options)
 else: 
-    df.to_csv('Lab1/exp_service.csv', **options)
+    df.to_csv(f'Lab1/exp_service_{int(load*100)}load.csv', **options)
+
 
 # PRINT COMPARISON THEORICAL/EMPIRICAL
 print("\n","*"*10,"  COMPARISON THEORICAL/EMPIRICAL  ","*"*10,"\n")
 print("Nominal arrival rate: ",1.0/lambda_arrival)
 print("Avg measured arrival rate",avg_arr/time,"\nAvg measured departure rate: ",avg_dep/time)
-theorical=(1.0/lambda_arrival)/(1.0/mu_service-1.0/lambda_arrival)
-print("\n\nAverage number of users\nTheorical: ", theorical,\
-      "  -  Avg empirical: ",avg_us/time)
+if uniform:
+    theorical_n, theorical_t = pollaczek_khintchin(uni_param) # E[N], E[T] for MG1 queues
+else:
+    theorical_n=(1.0/lambda_arrival)/(1.0/mu_service-1.0/lambda_arrival) # E[N] for MM1 queue
+    theorical_t=1.0/(1.0/mu_service-1.0/lambda_arrival) # E[T] from MM1 queue
 
-theorical=1.0/(1.0/mu_service-1.0/lambda_arrival)
-print("Average delay \nTheorical= ",theorical,"  -  Avg empirical: ",avg_delays)
+print("\n\nAverage number of users\nTheorical: ", theorical_n,\
+      "  -  Avg empirical: ",avg_us/time)
+print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
 
 print("\n","*"*40)
