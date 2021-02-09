@@ -13,7 +13,7 @@ uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the serv
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = 5 # specify a number for finite capacity
+waiting_line = '' # specify a number for finite capacity
 # set the waiting line as empty string for infinite capacity queue
 uniform = False
 
@@ -68,7 +68,7 @@ def arrival(time, FES, queue):
     FES.put((time + inter_arrival, 'arrival'))
 
     # update the state variable
-    if users == waiting_line + 1: # considering also the user in service
+    if waiting_line != '' and users == waiting_line + 1: # considering also the user in service
         data.loss += 1 # the user leaves the queue without entering
     else:
         users += 1
@@ -214,10 +214,17 @@ options = {
 if os.listdir(os.getcwd()+"/Lab1").__contains__("data") == False:
     os.mkdir(os.getcwd()+"/Lab1/data")
 
-if uniform: 
-    df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load.csv', **options)
-else: 
-    df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load.csv', **options)
+if uniform:
+    if waiting_line == '': 
+        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load.csv', **options)
+    else:
+        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load_MM1B.csv', **options)
+else:
+    if waiting_line == '':  
+        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load.csv', **options)
+    else:
+        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MM1B.csv', **options)
+
 
 
 # PRINT COMPARISON THEORICAL/EMPIRICAL
