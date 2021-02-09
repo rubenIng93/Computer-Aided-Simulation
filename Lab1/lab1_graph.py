@@ -49,11 +49,11 @@ def plot_comparison_ex1(exp_list, uni_list, out_filename, delays=False):
 # find the .csv files
 exp_files_paths = []
 uni_files_paths = []
-for _file in os.listdir(os.getcwd()+"/Lab1"):
+for _file in os.listdir(os.getcwd()+"/Lab1/data"):
     if _file.startswith("exp"):
-        exp_files_paths.append('Lab1/'+_file)
+        exp_files_paths.append('Lab1/data/'+_file)
     if _file.startswith("uni"):
-        uni_files_paths.append('Lab1/'+_file)
+        uni_files_paths.append('Lab1/data/'+_file)
 
 # make a folder
 if os.listdir(os.getcwd()+"/Lab1").__contains__("images") == False:

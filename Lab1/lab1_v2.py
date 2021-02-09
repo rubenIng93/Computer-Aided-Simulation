@@ -3,16 +3,17 @@ from queue import PriorityQueue
 from scipy.stats import t
 import numpy as np
 import pandas as pd
+import os
 
 # useful variables
 runs = 10
 sim_time = 1000
-mu_service = 4.5 # service rate, parameter of the exp distribution
-uni_param = {'a':1, 'b': 8.8} # parameter for the uniform distribution of the service time
+mu_service = 4 # service rate, parameter of the exp distribution
+uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the service time
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-uniform = True
+uniform = False
 
 if uniform:
     mean = (uni_param['a'] + uni_param['b']) / 2
@@ -202,10 +203,14 @@ options = {
     'sep': '\t',
     'index': 'MEASURES'    
 }
+# create a folder if not present
+if os.listdir(os.getcwd()+"/Lab1").__contains__("data") == False:
+    os.mkdir(os.getcwd()+"/Lab1/data")
+
 if uniform: 
-    df.to_csv(f'Lab1/uni_service_{int(load*100)}load.csv', **options)
+    df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load.csv', **options)
 else: 
-    df.to_csv(f'Lab1/exp_service_{int(load*100)}load.csv', **options)
+    df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load.csv', **options)
 
 
 # PRINT COMPARISON THEORICAL/EMPIRICAL
