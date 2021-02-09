@@ -13,6 +13,8 @@ uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the serv
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
+waiting_line = 5 # specify a number for finite capacity
+# set the waiting line as empty string for infinite capacity queue
 uniform = False
 
 if uniform:
@@ -42,12 +44,13 @@ print(40 * '*')
 
 # define a class which tracks the measures
 class Measures:
-    def __init__(self,Narr,Ndep,NAveraegUser,OldTimeEvent,AverageDelay):
+    def __init__(self,Narr,Ndep,NAveraegUser,OldTimeEvent,AverageDelay, Losses):
         self.arr = Narr
         self.dep = Ndep
         self.ut = NAveraegUser
         self.oldT = OldTimeEvent
         self.delay = AverageDelay
+        self.loss = Losses # in case of finite capacity of the waiting line
 
 # function that triggers when the arrival event happens
 def arrival(time, FES, queue):
@@ -65,12 +68,13 @@ def arrival(time, FES, queue):
     FES.put((time + inter_arrival, 'arrival'))
 
     # update the state variable
-    users += 1
-
-    # the client here is idetified with the time he arrives
-    client = time
-    
-    queue.append(client)
+    if users == waiting_line + 1: # considering also the user in service
+        data.loss += 1 # the user leaves the queue without entering
+    else:
+        users += 1
+        # the client here is idetified with the time he arrives
+        client = time        
+        queue.append(client)
 
     # if the server is idle start a new service
     if users == 1:
@@ -141,7 +145,7 @@ for _ in range(runs):
     users = 0
     time = 0
     queue = []
-    data = Measures(0,0,0,0,0)
+    data = Measures(0,0,0,0,0,0)
     FES = PriorityQueue()
     FES.put((0, 'arrival')) # schedule the first event
 
@@ -169,6 +173,7 @@ delays = np.zeros(runs) # initialize np array
 avg_users = np.zeros(runs) # initialize np array
 arrivals = np.zeros(runs) # initialize np array
 departures = np.zeros(runs) # initialize np array
+losses = np.zeros(runs) # initialize np array
 
 for i in range(runs):
     data = running_data[i]
@@ -176,6 +181,7 @@ for i in range(runs):
     departures[i] = data.dep
     avg_users[i] = data.ut
     delays[i] = data.delay/data.dep
+    losses[i] = data.loss
 
 avg_delays, ci_delays, err_delays = evaluate_conficence_interval(delays) # delays
 avg_us, ci_users, err_users = evaluate_conficence_interval(avg_users) # avg users
@@ -183,15 +189,16 @@ avg_tot_users, ci_tot_users, err_tot_users = evaluate_conficence_interval(np.arr
 avg_dep, ci_dep, err_dep = evaluate_conficence_interval(departures) # departures
 avg_arr, ci_arr, err_arr = evaluate_conficence_interval(arrivals) # arrivals
 avg_len_queue, ci_len_queue, err_len_queue = evaluate_conficence_interval(np.array(running_len_queue)) # residual queue
+avg_loss, ci_loss, err_loss = evaluate_conficence_interval(losses)
 
 # PRINT OUTPUT ORGANIZED IN PANDAS DATAFRAME
 
 df = pd.DataFrame(data={
-    'MEASURES':['Res users', 'Avg users', 'Arrivals', 'Departures', 'Delay','Res queue'],
-    'Lower bound':[avg_tot_users-ci_tot_users, (avg_us-ci_users)/sim_time, avg_arr-ci_arr, avg_dep-ci_dep, avg_delays-ci_delays, avg_len_queue-ci_len_queue],
-    'Mean':[avg_tot_users, avg_us/sim_time, avg_arr, avg_dep, avg_delays, avg_len_queue],
-    'Upper bound':[avg_tot_users+ci_tot_users, (avg_us+ci_users)/sim_time, avg_arr+ci_arr, avg_dep+ci_dep, avg_delays+ci_delays, avg_len_queue+ci_len_queue],
-    'Relative error':[err_tot_users, err_users, err_arr, err_dep, err_delays, err_len_queue]
+    'MEASURES':['Res users', 'Avg users', 'Arrivals', 'Departures', 'Delay','Res queue', 'Losses'],
+    'Lower bound':[avg_tot_users-ci_tot_users, (avg_us-ci_users)/sim_time, avg_arr-ci_arr, avg_dep-ci_dep, avg_delays-ci_delays, avg_len_queue-ci_len_queue, avg_loss-ci_loss],
+    'Mean':[avg_tot_users, avg_us/sim_time, avg_arr, avg_dep, avg_delays, avg_len_queue, avg_loss],
+    'Upper bound':[avg_tot_users+ci_tot_users, (avg_us+ci_users)/sim_time, avg_arr+ci_arr, avg_dep+ci_dep, avg_delays+ci_delays, avg_len_queue+ci_len_queue, avg_loss+ci_loss],
+    'Relative error':[err_tot_users, err_users, err_arr, err_dep, err_delays, err_len_queue, err_loss]
 })
 
 print("\n","*"*10,"  MEASUREMENTS  ","*"*10,"\n")
@@ -223,8 +230,27 @@ else:
     theorical_n=(1.0/lambda_arrival)/(1.0/mu_service-1.0/lambda_arrival) # E[N] for MM1 queue
     theorical_t=1.0/(1.0/mu_service-1.0/lambda_arrival) # E[T] from MM1 queue
 
-print("\n\nAverage number of users\nTheorical: ", theorical_n,\
-      "  -  Avg empirical: ",avg_us/time)
-print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
+if waiting_line == '': # these measures lose meaning with losses
+    print("\n\nAverage number of users\nTheorical: ", theorical_n,\
+        "  -  Avg empirical: ",avg_us/time)
+    print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
+else:
+    # MM1B formulas
+    ro = (1/lambda_arrival)/(1/mu_service)
+    loss_theorical = (1 - ro) / (1 - ro**(waiting_line+1)) * ro**waiting_line
+    print(f'\nLoss probability \nTheorical= {loss_theorical*100} % - Empirical= {avg_loss/avg_arr*100} %')
+
+    # computation E[N] theorical
+    e_n = 0
+    for i in range(0, waiting_line+1): # in [1,5] in this case
+        e_n += (1-ro) / (1-ro**(waiting_line+1)) * ro**i * i 
+    e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
+    e_t = e_n / e_lambda
+
+    print("\nAverage number of users\nTheorical: ", e_n,\
+        "  -  Avg empirical: ",avg_us/time)
+    print("Average delay \nTheorical= ",e_t,"  -  Avg empirical: ",avg_delays)
+
+
 
 print("\n","*"*40)
