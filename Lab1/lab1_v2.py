@@ -242,21 +242,22 @@ if waiting_line == '': # these measures lose meaning with losses
         "  -  Avg empirical: ",avg_us/time)
     print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
 else:
-    # MM1B formulas
-    ro = (1/lambda_arrival)/(1/mu_service)
-    loss_theorical = (1 - ro) / (1 - ro**(waiting_line+1)) * ro**waiting_line
-    print(f'\nLoss probability \nTheorical= {loss_theorical*100} % - Empirical= {avg_loss/avg_arr*100} %')
+    # MM1B formulas only for markovian
+    if uniform == False:
+        ro = (1/lambda_arrival)/(1/mu_service)
+        loss_theorical = (1 - ro) / (1 - ro**(waiting_line+1)) * ro**waiting_line
+        print(f'\nLoss probability \nTheorical= {loss_theorical*100} % - Empirical= {avg_loss/avg_arr*100} %')
 
-    # computation E[N] theorical
-    e_n = 0
-    for i in range(0, waiting_line+1): # in [1,5] in this case
-        e_n += (1-ro) / (1-ro**(waiting_line+1)) * ro**i * i 
-    e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
-    e_t = e_n / e_lambda
+        # computation E[N] theorical
+        e_n = 0
+        for i in range(0, waiting_line+1): # in [1,5] in this case
+            e_n += (1-ro) / (1-ro**(waiting_line+1)) * ro**i * i 
+        e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
+        e_t = e_n / e_lambda
 
-    print("\nAverage number of users\nTheorical: ", e_n,\
-        "  -  Avg empirical: ",avg_us/time)
-    print("Average delay \nTheorical= ",e_t,"  -  Avg empirical: ",avg_delays)
+        print("\nAverage number of users\nTheorical: ", e_n,\
+            "  -  Avg empirical: ",avg_us/time)
+        print("Average delay \nTheorical= ",e_t,"  -  Avg empirical: ",avg_delays)
 
 
 
