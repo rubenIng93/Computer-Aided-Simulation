@@ -13,7 +13,7 @@ uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the serv
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = '' # specify a number for finite capacity
+waiting_line = 2 # specify a number for finite capacity
 # set the waiting line as empty string for infinite capacity queue
 n_servers = 2 # set to integer > 1 to exploit the multi server approach
 uniform = True
