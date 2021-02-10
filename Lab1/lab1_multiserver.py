@@ -8,7 +8,7 @@ import os
 # useful variables
 runs = 10
 sim_time = 1000
-mu_service = 2 # service rate, parameter of the exp distribution
+mu_service = 4 # service rate, parameter of the exp distribution
 uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the service time
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
@@ -16,14 +16,14 @@ confidence_level = 0.95
 waiting_line = '' # specify a number for finite capacity
 # set the waiting line as empty string for infinite capacity queue
 n_servers = 2 # set to integer > 1 to exploit the multi server approach
-uniform = True
+uniform = False
 
 if uniform:
     mean = (uni_param['a'] + uni_param['b']) / 2
-    load = mean / lambda_arrival
-    mu_service = mean
+    load = n_servers*mean / lambda_arrival
+    mu_service = mean * n_servers
 else:
-    load = mu_service/lambda_arrival
+    load = mu_service/lambda_arrival/n_servers
 
 # DATA STRUCTURES FOR MULTIPLE RUNS
 running_data = [] # keep track of the n runs statistics
@@ -78,10 +78,10 @@ def arrival(time, FES, queue):
         client = time        
         queue.append(client)
 
-    # if the server is idle start a new service
-    if users <= n_servers and len(queue) > 0:
-        # sample the service time uniform or exp
+    # if a server is idle start a new service
+    if users <= n_servers and len(queue) > 0: # means that a server is idle to be busy users must be > n_servers         
         if uniform:
+            # sample the service time uniform or exp
             service_time = random.uniform(uni_param['a'], uni_param['b'])
         else:
             service_time = random.expovariate(1/mu_service)
@@ -123,10 +123,7 @@ def evaluate_conficence_interval(values):
     ave = values.mean()
     stddev = values.std(ddof=1)
     ci = t_treshold * stddev /np.sqrt(runs)
-    if ave != 0:
-        rel_err = ci/ ave
-    else:
-        rel_err = None
+    rel_err = ci/ ave
     return ave, ci, rel_err
 
 # function that derives E[N] and E[T] for the uniform distribution selected
@@ -222,14 +219,14 @@ if os.listdir(os.getcwd()+"/Lab1").__contains__("data") == False:
 
 if uniform:
     if waiting_line == '': 
-        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load_MG{n_servers}.csv', **options)
+        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load_MMm.csv', **options)
     else:
-        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load_MG{n_servers}B.csv', **options)
+        df.to_csv(f'Lab1/data/uni_service_{int(load*100)}load_MMmB.csv', **options)
 else:
     if waiting_line == '':  
-        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MM{n_servers}.csv', **options)
+        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MMm.csv', **options)
     else:
-        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MM{n_servers}B.csv', **options)
+        df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MMmB.csv', **options)
 
 
 
@@ -244,10 +241,9 @@ else:
     theorical_t=1.0/(1.0/mu_service-1.0/lambda_arrival) # E[T] from MM1 queue
 
 if waiting_line == '': # these measures lose meaning with losses
-    if n_servers == 1:
-        print("\n\nAverage number of users\nTheorical: ", theorical_n,\
-            "  -  Avg empirical: ",avg_us/time)
-        print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
+    print("\n\nAverage number of users\nTheorical: ", theorical_n,\
+        "  -  Avg empirical: ",avg_us/time)
+    print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
 else:
     # MM1B formulas only for markovian
     if uniform == False:
