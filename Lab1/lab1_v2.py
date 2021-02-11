@@ -8,14 +8,15 @@ import os
 # useful variables
 runs = 10
 sim_time = 1000
-mu_service = 2 # service rate, parameter of the exp distribution
+mu_service = 4.5 # service rate, parameter of the exp distribution
 uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the service time
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = 2 # specify a number for finite capacity
+waiting_line = 3 # specify a number for finite capacity or a list for check the impact 
+# with the function on purpose
 # set the waiting line as empty string for infinite capacity queue
-n_servers = 2 # set to integer > 1 to exploit the multi server approach
+n_servers = 1 # set to integer > 1 to exploit the multi server approach
 uniform = True
 
 if uniform:
@@ -135,6 +136,7 @@ def pollaczek_khintchin(uni_dict):
     # compute the coefficient of variation
     var = (uni_dict['b'] - uni_dict['a'])**2 / 12
     c = var / mean**2
+    print(f'Coefficient of variation: C = {c:.2f}')
 
     E_N = (1/lambda_arrival)*mean + ((1/lambda_arrival)*mean)**2 * (1+c)/(2*(1-mean/lambda_arrival))
     E_T = E_N / (1/lambda_arrival)
@@ -147,6 +149,7 @@ random.seed(22)
 
 # RUNS LOOP
 for _ in range(runs): 
+
     # INITIALIZATION
     users = 0
     time = 0
@@ -232,7 +235,6 @@ else:
         df.to_csv(f'Lab1/data/exp_service_{int(load*100)}load_MM{n_servers}B.csv', **options)
 
 
-
 # PRINT COMPARISON THEORICAL/EMPIRICAL
 print("\n","*"*10,"  COMPARISON THEORICAL/EMPIRICAL  ","*"*10,"\n")
 print("Nominal arrival rate: ",1.0/lambda_arrival)
@@ -252,20 +254,21 @@ else:
     # MM1B formulas only for markovian
     if uniform == False:
         ro = (1/lambda_arrival)/(1/mu_service*n_servers)
-        loss_theorical = (1 - ro) / (1 - ro**(waiting_line+1)) * ro**waiting_line
+        loss_theorical = (1 - ro) / (1 - ro**(waiting_line+2)) * ro**(waiting_line+1)
         print(f'\nLoss probability \nTheorical= {loss_theorical*100} % - Empirical= {avg_loss/avg_arr*100} %')
 
         # computation E[N] theorical
         e_n = 0
-        for i in range(0, waiting_line+1): # in [1,5] in this case
-            e_n += (1-ro) / (1-ro**(waiting_line+1)) * ro**i * i 
+        for i in range(0, waiting_line+2): # in [1,5] in this case
+            e_n += (1-ro) / (1-ro**(waiting_line+2)) * ro**i * i 
         e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
         e_t = e_n / e_lambda
 
         print("\nAverage number of users\nTheorical: ", e_n,\
             "  -  Avg empirical: ",avg_us/time)
         print("Average delay \nTheorical= ",e_t,"  -  Avg empirical: ",avg_delays)
-
+    else:
+        print(f'\nEmpirical loss probability = {avg_loss/avg_arr*100} %')
 
 
 print("\n","*"*40)

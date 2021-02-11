@@ -7,7 +7,7 @@ import csv
 
 def plot_comparison_ex1(exp_list, uni_list, out_filename, delays=False):
 
-    labels = ['40', '60', '80', '90', '98']
+    labels = ['40', '80', '90']
     x = np.arange(len(labels)) # the label location
     width = 0.35 # width of the bars
 
@@ -17,10 +17,10 @@ def plot_comparison_ex1(exp_list, uni_list, out_filename, delays=False):
 
     ax.set_xlabel('Load [%]')
     if delays:
-        ax.set_title('E[T] by loads and service time distribution')
+        ax.set_title(' Single server E[T] by loads and service time distribution')
         ax.set_ylabel('Delays [s]')
     else:
-        ax.set_title('E[N] by loads and service time distribution')
+        ax.set_title('Single server E[N] by loads and service time distribution')
         ax.set_ylabel('Avg users')
 
     ax.set_xticks(x)
@@ -44,16 +44,20 @@ def plot_comparison_ex1(exp_list, uni_list, out_filename, delays=False):
 
     plt.savefig('Lab1/images/'+out_filename)
 
+def find_files(queue_type):
+    # find the .csv files
+    exp_files_paths = []
+    uni_files_paths = []
+    for _file in os.listdir(os.getcwd()+"/Lab1/data"):
+        if _file.startswith("exp") and _file.find(queue_type) > 0:
+            exp_files_paths.append('Lab1/data/'+_file)
+        if _file.startswith("uni") and _file.find(queue_type) > 0:
+            uni_files_paths.append('Lab1/data/'+_file)
 
+    return exp_files_paths, uni_files_paths
 
-# find the .csv files
-exp_files_paths = []
-uni_files_paths = []
-for _file in os.listdir(os.getcwd()+"/Lab1/data"):
-    if _file.startswith("exp"):
-        exp_files_paths.append('Lab1/data/'+_file)
-    if _file.startswith("uni"):
-        uni_files_paths.append('Lab1/data/'+_file)
+# modify here to get the right files
+exp_files_paths, uni_files_paths = find_files('B')
 
 # make a folder
 if os.listdir(os.getcwd()+"/Lab1").__contains__("images") == False:
@@ -92,7 +96,7 @@ for _file in uni_files_paths:
 
 
 
-plot_comparison_ex1(exp_users, uni_users, 'avg_users_comparison.png')
-plot_comparison_ex1(exp_delays, uni_delays, 'delays_comparison.png')
+plot_comparison_ex1(exp_users, uni_users, 'avg_users_comparison_B.png')
+plot_comparison_ex1(exp_delays, uni_delays, 'delays_comparison_B.png', delays=True)
 
 
