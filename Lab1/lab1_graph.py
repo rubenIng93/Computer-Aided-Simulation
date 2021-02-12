@@ -5,98 +5,110 @@ import numpy as np
 import os
 import csv
 
-def plot_comparison_ex1(exp_list, uni_list, out_filename, delays=False):
-
-    labels = ['40', '80', '90']
-    x = np.arange(len(labels)) # the label location
-    width = 0.35 # width of the bars
-
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width/2, exp_list, width, label='Exponential')
-    rects2 = ax.bar(x + width/2, uni_list, width, label='Uniform')
-
-    ax.set_xlabel('Load [%]')
-    if delays:
-        ax.set_title(' Single server E[T] by loads and service time distribution')
-        ax.set_ylabel('Delays [s]')
-    else:
-        ax.set_title('Single server E[N] by loads and service time distribution')
-        ax.set_ylabel('Avg users')
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend()
-
-    def autolabel(rects):
-        """Attach a text label above each bar in *rects*, displaying its height."""
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate('{:.2f}'.format(height),
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-    autolabel(rects1)
-    autolabel(rects2)
-
-    fig.tight_layout()
-
-    plt.savefig('Lab1/images/'+out_filename)
-
-def find_files(queue_type):
-    # find the .csv files
-    exp_files_paths = []
-    uni_files_paths = []
-    for _file in os.listdir(os.getcwd()+"/Lab1/data"):
-        if _file.startswith("exp") and _file.find(queue_type) > 0:
-            exp_files_paths.append('Lab1/data/'+_file)
-        if _file.startswith("uni") and _file.find(queue_type) > 0:
-            uni_files_paths.append('Lab1/data/'+_file)
-
-    return exp_files_paths, uni_files_paths
-
-# modify here to get the right files
-exp_files_paths, uni_files_paths = find_files('B')
 
 # make a folder
 if os.listdir(os.getcwd()+"/Lab1").__contains__("images") == False:
     os.mkdir(os.getcwd()+"/Lab1/images")
 
-# load the files and save the useful variables
-# i.e. E[N] and E[T]
-uni_users = []
-uni_delays = []
-exp_users = []
-exp_delays = []
 
-# LOOP THAT GETS THE RIGHT VALUES FOR EXP SERVICES
-for _file in exp_files_paths:
-    with open(_file, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter='\t')
-        i = 0
+def pick_delay_values(in_file):
+    loads = []
+    lb = []
+    mean = []
+    ub = []
+    theo = []
+
+    with open(in_file, 'r') as _file:
+        plots = csv.reader(_file, delimiter='\t')
+        header = True
         for row in plots:
-            if i == 2:
-                exp_users.append(float(row[3])) # avg users
-            elif i == 5:
-                exp_delays.append(float(row[3])) # delays
-            i += 1
+            if header:
+                header = False
+            else:
+                loads.append(float(row[0])*100)
+                lb.append(float(row[1]))
+                mean.append(float(row[2]))
+                ub.append(float(row[3]))
+                theo.append(float(row[10]))
 
-# LOOP THAT GETS THE RIGHT VALUES FOR UNIFORM SERVICES
-for _file in uni_files_paths:
-    with open(_file, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter='\t')
-        i = 0
+    return loads, lb, mean, ub, theo
+
+def pick_avg_cust_values(in_file):
+    loads = []
+    lb = []
+    mean = []
+    ub = []
+    theo = []
+
+    with open(in_file, 'r') as _file:
+        plots = csv.reader(_file, delimiter='\t')
+        header = True
         for row in plots:
-            if i == 2:
-                uni_users.append(float(row[3])) # avg users
-            elif i == 5:
-                uni_delays.append(float(row[3])) # delays
-            i += 1
+            if header:
+                header = False
+            else:
+                loads.append(float(row[0])*100)
+                lb.append(float(row[4]))
+                mean.append(float(row[5]))
+                ub.append(float(row[6]))
+                theo.append(float(row[11]))
+
+    return loads, lb, mean, ub, theo
 
 
+def metric_wrt_mu_service(input_filename, out_filename, _type, comparison=''):
 
-plot_comparison_ex1(exp_users, uni_users, 'avg_users_comparison_B.png')
-plot_comparison_ex1(exp_delays, uni_delays, 'delays_comparison_B.png', delays=True)
+    if _type == 'delay':
+        loads1, lb1, mean1, ub1, theo1 = pick_delay_values(input_filename)
+
+        plt.plot(loads1, mean1, label='MM1 simulation')
+        plt.plot(loads1, theo1, label='MM1 theorical value', linestyle='dotted')
+        plt.fill_between(loads1, lb1, ub1, color='b', alpha=.1, label='MM1 95% CI')
+        plt.xlabel('Loads [%]')
+        plt.ylabel('Delay [s]')
+        title = 'E[T] in different conditions of service time MM1 queue'
+        plt.title('mean of inter-arrival time fixed at 5s')
+
+        if comparison != '':
+            loads2, lb2, mean2, ub2, theo2 = pick_delay_values(comparison)
+            plt.plot(loads2, mean2, label='MG1 simulation')
+            plt.plot(loads2, theo2, label='MG1 theorical value', linestyle='dotted')
+            plt.fill_between(loads2, lb2, ub2, color='g', alpha=.1, label='MG1 95% CI')
+            title = 'E[T] w.r.t. loads. Comparison MM1/MG1'
+
+        plt.suptitle(title)
+        plt.legend()
+        plt.savefig('Lab1/images/'+out_filename)
+        plt.clf()
+
+    elif _type == 'avg_users':
+        loads1, lb1, mean1, ub1, theo1 = pick_avg_cust_values(input_filename)
+
+        plt.plot(loads1, mean1, label='MM1 simulation')
+        plt.plot(loads1, theo1, label='MM1 theorical value', linestyle='dotted')
+        plt.fill_between(loads1, lb1, ub1, color='b', alpha=.1, label='MM1 95% CI')
+        plt.xlabel('Loads [%]')
+        plt.ylabel('Avg users in the queue')
+        title = 'E[N] in different conditions of service time MM1 queue'
+        plt.title('mean of inter-arrival time fixed at 5s')
+
+        if comparison != '':
+            loads2, lb2, mean2, ub2, theo2 = pick_avg_cust_values(comparison)
+            plt.plot(loads2, mean2, label='MG1 simulation')
+            plt.plot(loads2, theo2, label='MG1 theorical value', linestyle='dotted')
+            plt.fill_between(loads2, lb2, ub2, color='g', alpha=.1, label='MG1 95% CI')
+            title = 'E[N] w.r.t. loads. Comparison MM1/MG1'
+
+        plt.suptitle(title)
+        plt.legend()
+        plt.savefig('Lab1/images/'+out_filename)
+        plt.clf()
+    
+
+
+#metric_wrt_mu_service('Lab1/data/prova.dat', 'exp_delay_wrt_mu_MM1.png', 'delay')
+metric_wrt_mu_service('Lab1/data/MM1.dat', 'comparison_delay_Mx1.png', 'delay', comparison='Lab1/data/MG1.dat')
+metric_wrt_mu_service('Lab1/data/MM1.dat', 'comparison_ET_Mx1.png', 'avg_users', comparison='Lab1/data/MG1.dat')
+    
 
 
