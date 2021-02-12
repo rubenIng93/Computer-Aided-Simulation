@@ -2,7 +2,6 @@ import random
 from queue import PriorityQueue
 from scipy.stats import t
 import numpy as np
-import pandas as pd
 import os
 
 # useful variables
@@ -17,7 +16,7 @@ waiting_line = 2 # specify a number for finite capacity or a list for check the 
 # with the function on purpose
 # set the waiting line as empty string for infinite capacity queue
 n_servers = 1 # set to integer > 1 to exploit the multi server approach
-uniform = True
+uniform = False
 
 # print the initial settings
 
@@ -103,7 +102,6 @@ def departure(time, FES, queue, param):
         # schedule the departure of the client
         FES.put((time + service_time, "departure"))
 
-
 # function that computes the confidence interval
 def evaluate_conficence_interval(values):
     t_treshold = t.ppf((confidence_level + 1) / 2, df= runs-1)
@@ -136,6 +134,7 @@ loads_delay = [] # data str that tracks the delay for different loads
 loads_avg_users = [] # same for avg_users
 loads_loss = [] # same for losses
 loads_theory = [] # same for theorical formulas
+loads_loss_theo = [] # same for loss probability theo
 debug = 0 # each 10 iteration an output
 
 if uniform:
@@ -147,13 +146,9 @@ else:
 
 # LOOP FOR DIFFERENT SERVICE TIME
 
-for param in params:
-
-    
+for param in params:   
    
     # RUNS LOOP
-
-
     # DATA STRUCTURES FOR MULTIPLE RUNS
     running_data = [] # keep track of the n runs statistics
     running_users = [] # keep track of the users during each run
@@ -207,22 +202,29 @@ for param in params:
     avg_dep, ci_dep, err_dep = evaluate_conficence_interval(departures) # departures
     avg_arr, ci_arr, err_arr = evaluate_conficence_interval(arrivals) # arrivals
     avg_len_queue, ci_len_queue, err_len_queue = evaluate_conficence_interval(np.array(running_len_queue)) # residual queue
-    avg_loss, ci_loss, err_loss = evaluate_conficence_interval(losses)
+    avg_loss, ci_loss, err_loss = evaluate_conficence_interval(losses) # losses
 
     # Theorical computation
     if uniform:
         mean = (uni_param['a'] + param) / 2
-        load = mean / lambda_arrival
+        load = mean / lambda_arrival /n_servers
         loads.append(load)
-        if waiting_line == '': # otherwise not formulas available
+        if waiting_line == '' and n_servers == 1: # otherwise not formulas available
             theorical_n, theorical_t = pollaczek_khintchin(uni_param, param) # E[N], E[T] for MG1 queues
         else:
+            # no formulas for finite capacity uniform and multiple server
             theorical_n, theorical_t = None, None
         loss_theorical = 0
     else:
-        if waiting_line == '':
+        # Markovian
+        if waiting_line == '' and n_servers == 1:
             theorical_n=(1.0/lambda_arrival)/(1.0/param-1.0/lambda_arrival) # E[N] for MM1 queue
             theorical_t=1.0/(1.0/param-1.0/lambda_arrival) # E[T] from MM1 queue
+            loss_theorical = 0
+
+        elif n_servers > 1:
+            theorical_n, theorical_t = None, None
+            loss_theorical = 0
 
         else: # computation for MM1B - only for Markovian
             ro = (1/lambda_arrival)/(1/param*n_servers)
@@ -235,12 +237,13 @@ for param in params:
             e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
             theorical_t = theorical_n / e_lambda
 
-        load = param/lambda_arrival # compute the load
+        load = param/lambda_arrival/n_servers # compute the load
 
 
     loads_delay.append((avg_delays-ci_delays, avg_delays, avg_delays+ci_delays)) # append a tuple for the ci
     loads_avg_users.append((avg_us-ci_users, avg_us, avg_us+ci_users))
-    loads_loss.append((avg_loss-ci_loss, avg_loss, avg_loss+ci_loss))
+    loads_loss.append(((avg_loss-ci_loss)/avg_arr, avg_loss/avg_arr, (avg_loss+ci_loss)/avg_arr))
+    loads_loss_theo.append(loss_theorical)
     loads_theory.append((theorical_t, theorical_n))
     
     if debug % 10 == 0:
@@ -258,74 +261,32 @@ for param in params:
 
     debug += 1
 
+# create a folder if not present
+if os.listdir(os.getcwd()+"/Lab1").__contains__("data") == False:
+    os.mkdir(os.getcwd()+"/Lab1/data")
 
 
 # SAVE IN A FILE
 if uniform:
     if waiting_line == '':
-        datafile = open('Lab1/data/MG1.dat', 'w')
+        datafile = open(f'Lab1/data/MG{n_servers}.dat', 'w')
     else:
-        datafile = open(f'Lab1/data/MG1{waiting_line}.dat', 'w')
-    print('Load\tLBDelay\tAvgDelay\tUBDelay\tLBUsers\tAvgUsers\tUBUsers\tLBLosses\tAvgLosses\tUBLosses\tTheoDelay\tTheoUsers', file=datafile) # print the header
+        datafile = open(f'Lab1/data/MG{n_servers}{waiting_line}.dat', 'w')
+    print('Load\tLBDelay\tAvgDelay\tUBDelay\tLBUsers\tAvgUsers\tUBUsers\tLBLosses\tAvgLosses\tUBLosses\tTheoDelay\tTheoUsers\tTheoLoss', file=datafile) # print the header
 
     for i in range(len(params)):
-        print(loads[i], *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], sep='\t', file=datafile)
+        print(loads[i], *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], loads_loss_theo[i], sep='\t', file=datafile)
 
     datafile.close()
 
 else:
     if waiting_line == '':
-        datafile = open('Lab1/data/MM1.dat', 'w')
+        datafile = open(f'Lab1/data/MM{n_servers}.dat', 'w')
     else:
-        datafile = open(f'Lab1/data/MM1{waiting_line}.dat', 'w')
-    print('Load\tLBDelay\tAvgDelay\tUBDelay\tLBUsers\tAvgUsers\tUBUsers\tLBLosses\tAvgLosses\tUBLosses\tTheoDelay\tTheoUsers', file=datafile) # print the header
+        datafile = open(f'Lab1/data/MM{n_servers}{waiting_line}.dat', 'w')
+    print('Load\tLBDelay\tAvgDelay\tUBDelay\tLBUsers\tAvgUsers\tUBUsers\tLBLosses\tAvgLosses\tUBLosses\tTheoDelay\tTheoUsers\tTheoLoss', file=datafile) # print the header
 
     for i in range(len(params)):
-        print(params[i]/lambda_arrival, *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], sep='\t', file=datafile)
+        print(params[i]/lambda_arrival, *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], loads_loss_theo[i], sep='\t', file=datafile)
 
     datafile.close()
-
-
-
-# create a folder if not present
-if os.listdir(os.getcwd()+"/Lab1").__contains__("data") == False:
-    os.mkdir(os.getcwd()+"/Lab1/data")
-'''
-# PRINT COMPARISON THEORICAL/EMPIRICAL
-print("\n","*"*10,"  COMPARISON THEORICAL/EMPIRICAL  ","*"*10,"\n")
-print("Nominal arrival rate: ",1.0/lambda_arrival)
-print("Avg measured arrival rate",avg_arr/time,"\nAvg measured departure rate: ",avg_dep/time)
-if uniform:
-    theorical_n, theorical_t = pollaczek_khintchin(uni_param) # E[N], E[T] for MG1 queues
-else:
-    theorical_n=(1.0/lambda_arrival)/(1.0/mu_service-1.0/lambda_arrival) # E[N] for MM1 queue
-    theorical_t=1.0/(1.0/mu_service-1.0/lambda_arrival) # E[T] from MM1 queue
-
-if waiting_line == '': # these measures lose meaning with losses
-    if n_servers == 1:
-        print("\n\nAverage number of users\nTheorical: ", theorical_n,\
-            "  -  Avg empirical: ",avg_us/time)
-        print("Average delay \nTheorical= ",theorical_t,"  -  Avg empirical: ",avg_delays)
-else:
-    # MM1B formulas only for markovian
-    if uniform == False:
-        ro = (1/lambda_arrival)/(1/mu_service*n_servers)
-        loss_theorical = (1 - ro) / (1 - ro**(waiting_line+2)) * ro**(waiting_line+1)
-        print(f'\nLoss probability \nTheorical= {loss_theorical*100} % - Empirical= {avg_loss/avg_arr*100} %')
-
-        # computation E[N] theorical
-        e_n = 0
-        for i in range(0, waiting_line+2): # in [1,5] in this case
-            e_n += (1-ro) / (1-ro**(waiting_line+2)) * ro**i * i 
-        e_lambda = (1/lambda_arrival) - (1/lambda_arrival)*loss_theorical
-        e_t = e_n / e_lambda
-
-        print("\nAverage number of users\nTheorical: ", e_n,\
-            "  -  Avg empirical: ",avg_us/time)
-        print("Average delay \nTheorical= ",e_t,"  -  Avg empirical: ",avg_delays)
-    else:
-        print(f'\nEmpirical loss probability = {avg_loss/avg_arr*100} %')
-
-
-print("\n","*"*40)
-'''

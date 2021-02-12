@@ -21,6 +21,10 @@ policy = 'faster'
 
 if uniform == False:
     load = (1/lambda_arrival)/(1/mu_service['s1']+1/mu_service['s2']) # min of 2 exp
+else:
+    mean1 = (uni_param['s1'][0] + uni_param['s1'][1])/2
+    mean2 = (uni_param['s2'][0] + uni_param['s2'][1])/2
+    load = (1/lambda_arrival)/(1/mean1 + 1/mean2)
     
 # DATA STRUCTURES FOR MULTIPLE RUNS
 running_data = [] # keep track of the n runs statistics
@@ -32,6 +36,7 @@ running_calls = [] # keep track of the calls for each server
 print('*'*10 +' INITIAL SETTINGS '+10*'*')
 if uniform:
     print(f'Service times uniformly distributed ({uni_param})')
+    print(f'Load: {load * 100} %')    
 else:
     print(f'Service time: {mu_service}')
     print(f'Load: {load * 100} %')    
