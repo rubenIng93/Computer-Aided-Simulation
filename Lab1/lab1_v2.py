@@ -12,11 +12,11 @@ uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the serv
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = 2 # specify a number for finite capacity or a list for check the impact 
+waiting_line = 10 # specify a number for finite capacity or a list for check the impact 
 # with the function on purpose
 # set the waiting line as empty string for infinite capacity queue
 n_servers = 1 # set to integer > 1 to exploit the multi server approach
-uniform = False
+uniform = True
 
 # print the initial settings
 
@@ -120,7 +120,7 @@ def pollaczek_khintchin(uni_dict, param):
     # compute the coefficient of variation
     var = (param - uni_dict['a'])**2 / 12
     c = var / mean**2
-    #print(f'Coefficient of variation: C = {c:.2f}')
+    print(f'Coefficient of variation: C = {c:.2f}')
 
     E_N = (1/lambda_arrival)*mean + ((1/lambda_arrival)*mean)**2 * (1+c)/(2*(1-mean/lambda_arrival))
     E_T = E_N / (1/lambda_arrival)
@@ -138,7 +138,7 @@ loads_loss_theo = [] # same for loss probability theo
 debug = 0 # each 10 iteration an output
 
 if uniform:
-    params = np.linspace(1.2, 8.9, 50) # b param of the uniform that changes
+    params = np.linspace(1.01, 8.9, 50) # b param of the uniform that changes
     # according to different loads
     loads = []  # list that tracks the loas for each b
 else:
