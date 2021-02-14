@@ -233,10 +233,64 @@ def mx1b_metrics(input_filename, out_filename, _type, comparison=''):
         plt.savefig('Lab1/images/'+out_filename)
         plt.clf()
 
+def waiting_line_comparison(input_files, out_filename, _type, exp=True):
+    
+    if _type == 'users':
+        for data in input_files:
+            B = list(data)[13] 
+            if list(data)[14] != '.':
+                B += '0'
+
+            loads1, _, mean1, _, _ = pick_avg_cust_values(data) 
+            if exp:
+                plt.plot(loads1, mean1, label=f'M/M/1/{B} simulation')
+            else:
+                plt.plot(loads1, mean1, label=f'M/G/1/{B} simulation')
+
+        plt.xlabel('Loads [%]')
+        plt.ylabel('Avg customers in the queue')
+        if exp:        
+            title = 'Effect of finite waiting line on E[N] - exp services'
+        else:
+            title = 'Effect of finite waiting line on E[N] - uni services'
+        plt.title('mean of inter-arrival time fixed at 5s')
+        plt.suptitle(title)
+        plt.legend()
+        plt.savefig('Lab1/images/'+out_filename)
+        plt.clf()
+
+    elif _type == 'loss':
+        for data in input_files:
+            B = list(data)[13] 
+            if list(data)[14] != '.':
+                B += '0'
+
+            loads1, _, mean1, _, _ = pick_prob_loss_values(data) 
+            if exp:
+                plt.plot(loads1, mean1, label=f'M/M/1/{B} simulation')
+            else:
+                plt.plot(loads1, mean1, label=f'M/G/1/{B} simulation')
+
+        plt.xlabel('Loads [%]')
+        plt.ylabel('Loss probability [%]')        
+        if exp:        
+            title = 'Effect of finite waiting line on E[N] - exp services'
+        else:
+            title = 'Effect of finite waiting line on E[N] - uni services'
+        plt.title('mean of inter-arrival time fixed at 5s')
+        plt.suptitle(title)
+        plt.legend()
+        plt.savefig('Lab1/images/'+out_filename)
+        plt.clf()
+
+    
+
+
 #metric_wrt_mu_service('Lab1/data/prova.dat', 'exp_delay_wrt_mu_MM1.png', 'delay')
 metric_wrt_mu_service('Lab1/data/MM1.dat', 'comparison_delay_Mx1.png', 'delay', comparison='Lab1/data/MG1.dat')
 metric_wrt_mu_service('Lab1/data/MM1.dat', 'comparison_ET_Mx1.png', 'avg_users', comparison='Lab1/data/MG1.dat')
 #mx12
+'''
 metric_wrt_mu_service('Lab1/data/MM12.dat', 'comparison_loss_Mx12.png', 'loss_probs', comparison='Lab1/data/MG12.dat')
 mx1b_metrics('Lab1/data/MM12.dat', 'comparison_delay_Mx12.png', 'delay', comparison='Lab1/data/MG12.dat')
 mx1b_metrics('Lab1/data/MM12.dat', 'comparison_users_Mx12.png', 'avg_users', comparison='Lab1/data/MG12.dat')
@@ -245,10 +299,18 @@ metric_wrt_mu_service('Lab1/data/MM15.dat', 'comparison_loss_Mx15.png', 'loss_pr
 mx1b_metrics('Lab1/data/MM15.dat', 'comparison_delay_Mx15.png', 'delay', comparison='Lab1/data/MG15.dat')
 mx1b_metrics('Lab1/data/MM15.dat', 'comparison_users_Mx15.png', 'avg_users', comparison='Lab1/data/MG15.dat')
 #mx110
+
 metric_wrt_mu_service('Lab1/data/MM110.dat', 'comparison_loss_Mx110.png', 'loss_probs', comparison='Lab1/data/MG110.dat')
 mx1b_metrics('Lab1/data/MM110.dat', 'comparison_delay_Mx110.png', 'delay', comparison='Lab1/data/MG110.dat')
 mx1b_metrics('Lab1/data/MM110.dat', 'comparison_users_Mx110.png', 'avg_users', comparison='Lab1/data/MG110.dat')
-
+'''
+# waiting line effect
+file_list_exp = ['Lab1/data/MM12.dat', 'Lab1/data/MM15.dat', 'Lab1/data/MM17.dat', 'Lab1/data/MM110.dat', 'Lab1/data/MM120.dat']
+file_list_uni = ['Lab1/data/MG12.dat', 'Lab1/data/MG15.dat', 'Lab1/data/MG17.dat', 'Lab1/data/MG110.dat', 'Lab1/data/MG120.dat']
+waiting_line_comparison(file_list_exp, 'MM1x_waiting_effect.png', 'users')
+waiting_line_comparison(file_list_uni, 'MG1x_waiting_effect.png', 'users', exp=False)
+waiting_line_comparison(file_list_exp, 'loss_MM1x_waiting_effect.png', 'loss')
+waiting_line_comparison(file_list_uni, 'loss_MG1x_waiting_effect.png', 'loss', exp=False)
 
     
 
