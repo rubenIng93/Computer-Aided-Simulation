@@ -4,6 +4,19 @@ import os
 
 # THIS SCRIPT ASSUMES THAT THE FILE ARE IN A FOLDER CALLED "Lab1"
 
+def get_n_runs_and_policy(filename):
+    s_chunk = filename.split('s')
+    runs = s_chunk[2].split('r')[0]
+    if filename.split('.')[0].endswith('s'):
+        policy = 'Random dropping policy'
+    else:
+        if filename.split('.')[0].endswith('2'):
+            policy = 'Random load balancing d=2'
+        else:
+            policy = 'Random load balancing d=4'
+
+    return runs, policy
+
 def plot_graph(input_filename,output_filename):
 
     # instantiate all the useful lists
@@ -54,7 +67,8 @@ def plot_graph(input_filename,output_filename):
         plt.ylim(bottom=0, top=10)
     else:
         plt.ylim(bottom=0)
-    title = input_filename.split(".")[0]
+    runs, policy = get_n_runs_and_policy(input_filename)
+    title = policy + ' in ' + runs + ' runs'
     plt.title(title)
     plt.legend()
     # plt.show()
@@ -65,7 +79,7 @@ def get_all_binsnballs_graphs():
     # find the .dat files
     files_paths = []
     for _file in os.listdir(os.getcwd()+"/Lab2"):
-        if _file.find("binsball") > 0:
+        if _file.find("binsball") >= 0:
             files_paths.append(_file)
     
     # make a folder
@@ -194,3 +208,4 @@ def comparison_graph(mode):
 get_all_binsnballs_graphs()
 comparison_graph("max_occupancy")
 comparison_graph("rel_error")
+
