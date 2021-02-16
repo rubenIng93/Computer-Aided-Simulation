@@ -12,11 +12,11 @@ uni_param = {'a':1, 'b': 3} # parameter for the uniform distribution of the serv
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = 20 # specify a number for finite capacity or a list for check the impact 
+waiting_line = '' # specify a number for finite capacity or a list for check the impact 
 # with the function on purpose
 # set the waiting line as empty string for infinite capacity queue
-n_servers = 1 # set to integer > 1 to exploit the multi server approach
-uniform = True
+n_servers = 2 # set to integer > 1 to exploit the multi server approach
+uniform = False
 
 # print the initial settings
 
@@ -57,7 +57,7 @@ def arrival(time, FES, queue, param):
     FES.put((time + inter_arrival, 'arrival'))
 
     # update the state variable
-    if waiting_line != '' and users == waiting_line + 1: # considering also the user in service
+    if waiting_line != '' and users == waiting_line + n_servers: # considering also the user in service
         data.loss += 1 # the user leaves the queue without entering
     else:
         users += 1
@@ -138,12 +138,17 @@ loads_loss_theo = [] # same for loss probability theo
 debug = 0 # each 10 iteration an output
 
 if uniform:
-    params = np.linspace(1.01, 8.9, 50) # b param of the uniform that changes
+    if n_servers == 2:
+        params = np.linspace(1.01, 18.59)
+    else:
+        params = np.linspace(1.01, 8.79, 50) # b param of the uniform that changes
     # according to different loads
     loads = []  # list that tracks the loas for each b
 else:
-    params = np.linspace(0.2, 4.9, 50) # service times
-
+    if n_servers == 2:
+        params = np.linspace(0.2, 9.8, 50) # service times case 2 servers to reach max load
+    else:
+        params = np.linspace(0.2, 4.9, 50) # service times
 # LOOP FOR DIFFERENT SERVICE TIME
 
 for param in params:   
@@ -239,7 +244,6 @@ for param in params:
 
         load = param/lambda_arrival/n_servers # compute the load
 
-
     loads_delay.append((avg_delays-ci_delays, avg_delays, avg_delays+ci_delays)) # append a tuple for the ci
     loads_avg_users.append((avg_us-ci_users, avg_us, avg_us+ci_users))
     loads_loss.append(((avg_loss-ci_loss)/avg_arr, avg_loss/avg_arr, (avg_loss+ci_loss)/avg_arr))
@@ -287,6 +291,6 @@ else:
     print('Load\tLBDelay\tAvgDelay\tUBDelay\tLBUsers\tAvgUsers\tUBUsers\tLBLosses\tAvgLosses\tUBLosses\tTheoDelay\tTheoUsers\tTheoLoss', file=datafile) # print the header
 
     for i in range(len(params)):
-        print(params[i]/lambda_arrival, *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], loads_loss_theo[i], sep='\t', file=datafile)
+        print(params[i]/lambda_arrival/n_servers, *loads_delay[i], *loads_avg_users[i], *loads_loss[i], *loads_theory[i], loads_loss_theo[i], sep='\t', file=datafile)
 
     datafile.close()

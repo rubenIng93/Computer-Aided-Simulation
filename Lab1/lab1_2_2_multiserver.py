@@ -7,17 +7,17 @@ import os
 
 # useful variables
 runs = 10
-sim_time = 1000
-mu_service = {'s1': 3, 's2': 4} # multiserver with different service time
-uni_param = {'s1':[1,3], 's2': [3,5]} # parameter for the uniform distribution of the service time
+sim_time = 10000
+mu_service = {'s1': 12, 's2': 8} # multiserver with different service time
+uni_param = {'s1':[7,9], 's2': [11,13]} # parameter for the uniform distribution of the service time
 # for this simulation 'a' kept to 1 and varied only b for the load
 lambda_arrival = 5 # arrival rate, parameter of Poisson distr.
 confidence_level = 0.95
-waiting_line = 2 # specify a number for finite capacity
+waiting_line = '' # specify a number for finite capacity
 # set the waiting line as empty string for infinite capacity queue
 n_servers = 2 # assumed to be 2 for this problem
-uniform = True
-policy = 'faster'
+uniform = False
+policy = 'random'
 
 if uniform == False:
     load = (1/lambda_arrival)/(1/mu_service['s1']+1/mu_service['s2']) # min of 2 exp
@@ -240,11 +240,12 @@ def departure(time, FES, queue):
                 service_time = random.uniform(uni_param['s2'][0], uni_param['s2'][1])
                 s2.set_busy()
                 s2.add_call()
-            
+                s2.departure_time = time + service_time
             else:
                 service_time = random.uniform(uni_param['s1'][0], uni_param['s1'][1])
                 s1.set_busy()
                 s1.add_call()
+                s1.departure_time = time + service_time
         else:
             # EXPONENTIAL
             if s1.get_busy():
@@ -252,11 +253,13 @@ def departure(time, FES, queue):
                 service_time = random.expovariate(1/mu_service['s2'])
                 s2.set_busy()
                 s2.add_call()
+                s2.departure_time = time + service_time
             
             else:
                 service_time = random.expovariate(1/mu_service['s1'])
                 s1.set_busy()
                 s1.add_call()
+                s1.departure_time = time + service_time
                 
                 # schedule the departure
         FES.put((time + service_time, 'departure'))             
