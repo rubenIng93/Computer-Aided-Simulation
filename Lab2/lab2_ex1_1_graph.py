@@ -149,7 +149,7 @@ def comparison_graph(mode):
         plt.plot(n,ave, label='Random load balancing = 4',marker='D')
         plt.fill_between(n, ci1,ci2, color='g', alpha=.1, label='95% CI')  
         plt.ylim(bottom=0, top=10)
-        plt.legend()
+        plt.legend(frameon=False)
         plt.title("Comparison between policies")
         plt.savefig("Lab2/images/Max_occupancy_comparison.png")
         plt.clf() 

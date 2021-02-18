@@ -6,9 +6,9 @@ from scipy.stats import t
 # initial settings
 seed = 2502
 confidence_level = 0.95
-runs = 5
+runs = 10
 debug = False
-load_balancing = None
+load_balancing = 4
 
 class BinNBalls_simulator:
     def __init__(self, runs, seed, confidence_level, debug, load_balancing):

@@ -4,6 +4,11 @@ import os
 
 # THIS SCRIPT ASSUMES THAT THE FILE ARE IN A FOLDER CALLED "Lab1"
 
+def get_n_elements(filename):
+    e_chunk = filename.split('e')
+    elements = e_chunk[0].split('x')[1]
+    return elements
+
 def plot_graph_probability(input_filename,output_filename):
 
     m = []
@@ -30,12 +35,13 @@ def plot_graph_probability(input_filename,output_filename):
                 ci2.append(float(row[4])*100)
             
     #plt.vlines(380, linestyles='dashed', label='Conflict threshold:', colors='r', ymin=0, ymax=100)
-    plt.plot(m, simulation, label='Simulation', marker='.')
-    plt.plot(m,theory, label='Theoretical',linestyle='dotted')
+    plt.plot(m, simulation, label='Simulation')
+    plt.plot(m,theory, label='Theoretical',linestyle='dotted', color='r')
     plt.fill_between(m, ci1,ci2, color='b', alpha=.1, label='95% CI')
-    plt.xlabel('Number of people')
+    plt.xlabel('Number of people m')
     plt.ylabel('Probability of conflicts [%]')
-    title = "Simulation vs Theoretical"
+    n_elements = get_n_elements(input_filename)
+    title = f"Simulation vs Theoretical - n = {n_elements}"
     plt.title(title)
     plt.legend()
     # plt.show()
@@ -77,5 +83,7 @@ def plot_graph_min_conflicts_per_run(input_filename,output_filename):
     plt.clf()
 
 
-#plot_graph_probability("Lab2/birthdayparadox100000elements1000runs.dat", "Graph10e5_1000runs.png")
-plot_graph_min_conflicts_per_run("Lab2/birthdayparadox1000000elements1000runs.dat", "Conflicts10e6_1000runs.png")
+plot_graph_probability("Lab2/data/birthdayparadox365elements1000runs.dat", "Graph365_1000runs.png") # 365
+plot_graph_probability("Lab2/data/birthdayparadox100000elements1000runs.dat", "Graph10e5_1000runs.png") # 10^5 
+plot_graph_probability("Lab2/data/birthdayparadox1000000elements1000runs.dat", "Graph10e6_1000runs.png") # 10^6
+#plot_graph_min_conflicts_per_run("data/Lab2/birthdayparadox1000000elements100runs.dat", "Conflicts10e6_1000runs.png")
