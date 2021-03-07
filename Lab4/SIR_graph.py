@@ -39,3 +39,4 @@ def plot_graph_SIR(input_filename,output_filename):
     plt.clf()
 
 plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
+plot_graph_SIR('Lab4/SIRmodel_agentBased.dat', 'AB_SIR.png')
