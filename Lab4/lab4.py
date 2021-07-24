@@ -28,7 +28,7 @@ i_tracker.append(i_t)
 r_tracker.append(r_t)
 
 # iterate untill the infected peoples are 0 
-while int(i_t) > 0:
+while days < 365:
     
     s_t = s_t - (beta / peoples) * s_tracker[days] * i_tracker[days] 
     i_t = i_t + (beta / peoples) *  s_tracker[days] * i_tracker[days] - gamma * i_tracker[days]

@@ -25,7 +25,7 @@ size_empty_set = asizeof.asizeof(fingerprint_set)
 for b in range(20, w): # 20 is a good starting number
     for word in words_set:
         word_hash = hashlib.md5(word.encode("utf-8")) # md5 hash
-        word_hash = int(word_hash.hexdigest(), 16) # cast integer format
+        word_hash = int(word_hash.hexdigest(), 16) # cast integer format        
         h = word_hash % 2**b # map into a given range [0, 2^b - 1]
         if h in fingerprint_set:
             print("A collision has been experienced with {} bits for the fingerprinting".format(b))
@@ -50,8 +50,9 @@ print("\nThe number of bits needed for get a probability\n of fingerprint collis
 # THEORETICAL STORAGE
 # for the fingerprint set we have to store b_exp bits for each word
 # a good avg size for a string could be 50 bytes
+# avg chars of English words is 4.7; 1 char = 1 byte = 8 bit 
 fing_set_theory_storage = w * b_exp / 8 # this bytes
-words_set_theory_storage = w * 50 # this is in bytes
+words_set_theory_storage = w * 4.7  # this is in bytes
 print("\nTheoretical storage for words set = {:.2f} KB".format(words_set_theory_storage/1024))
 print("Theoretical storage for {}-fingerprint set = {:.2f} KB".format(b_exp, fing_set_theory_storage/1024))
 
