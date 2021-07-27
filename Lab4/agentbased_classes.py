@@ -12,6 +12,31 @@ random.seed(seed)
 confidence_level = 0.95
 debug = False
 
+def evaluate_conficence_interval(x):
+        t_treshold = t.ppf((confidence_level + 1) / 2, df= runs-1)
+        ave = x.mean()
+        stddev = x.std(ddof=1)
+        ci = t_treshold * stddev /np.sqrt(runs)
+        rel_err = ci/ ave
+        
+        return (ave, ci, rel_err)
+
+def confidence_interval_global(lists):
+    '''
+    Args: the list of list for each run of the simulation of S or R or I
+    Returns: a vector with means, ci and relative error for each
+    [(ci, mean, rel_err), ...]
+    '''
+    result = []
+    # built an array for each step i.e. for first step all position 0 
+    for day in range(len(lists[0])): # is always 365 by construction
+        temp_list = []
+        for _list in lists:
+            temp_list.append(_list[day])
+        result.append(evaluate_conficence_interval(np.array(temp_list)))
+
+    return result
+
 # class for each individuals
 class Person:
 
@@ -45,6 +70,7 @@ class AgentBasedModel:
         self.s_t = []
         self.i_t = []
         self.r_t = []
+        
 
     def start_disease(self):
         '''
@@ -85,7 +111,7 @@ class AgentBasedModel:
         self.i_t.append(actual_infected)
 
     def simulate(self):
-
+        
         day = 0
         self.start_disease()
         while day < 365:
@@ -123,10 +149,11 @@ class AgentBasedModel:
 
             day += 1
 
-        print(f'The infection lasted {day - 1} day')
-        print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')
+        #print(f'The infection lasted {day - 1} day')
+        #print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')    
 
-        
+
+    '''not needed anymore'''
     def generate_file(self):
 
         datafile = open('Lab4/SIRmodel_agentBased2.dat', 'w')
@@ -144,7 +171,56 @@ class AgentBasedModel:
         datafile.close()
 
 
-    
-simulator = AgentBasedModel(population, contact_per_day, infection_duration)
-simulator.simulate()
-simulator.generate_file()
+# data structures to keep all the runs
+runs_s = [] # list of s_t for each run
+runs_i = []
+runs_r = []
+
+print(5*'#' + ' Initial setting ' + 5*'#')
+print(f'Population: {population}    seed: {seed}')
+print(f'c. level:   {confidence_level}')
+
+
+for run in range(runs):
+
+    print(f'\nSimulate run {run}')
+
+    simulator = AgentBasedModel(population, contact_per_day, infection_duration)
+    simulator.simulate()
+
+    # save all
+    runs_s.append(simulator.s_t)
+    runs_i.append(simulator.i_t)
+    runs_r.append(simulator.r_t)
+
+# get the cis
+result_s = confidence_interval_global(runs_s)
+result_i = confidence_interval_global(runs_i)
+result_r = confidence_interval_global(runs_r)
+
+
+datafile = open('Lab4/provaCI.dat', 'w')
+print('day\tmean(S_t)\tciLow(S_t)\tciHigh(S_t)\trelerr(S_t)' + \
+    '\tmean(I_t)\tciLow(I_t)\tciHigh(I_t)\trelerr(I_t)' + \
+        '\tmean(R_t)\tciLow(R_t)\tciHigh(R_t)\trelerr(R_t)', file=datafile)
+
+for i in range(len(result_s)):
+    print(
+        i, # the day
+        result_s[i][0], # s_t mean
+        result_s[i][0] - result_s[i][1], # cilow
+        result_s[i][0] + result_s[i][1], # cihigh
+        result_s[i][2], # rel error
+        result_i[i][0], # s_t mean
+        result_i[i][0] - result_i[i][1], # cilow
+        result_i[i][0] + result_i[i][1], # cihigh
+        result_i[i][2], # rel error
+        result_r[i][0], # s_t mean
+        result_r[i][0] - result_r[i][1], # cilow
+        result_r[i][0] + result_r[i][1], # cihigh
+        result_r[i][2], # rel error
+        sep='\t',
+        file=datafile
+    )
+datafile.close()
+
