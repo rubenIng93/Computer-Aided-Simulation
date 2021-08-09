@@ -4,11 +4,12 @@ from scipy.stats import t
 
 # starting parameters
 population = 10000
-contact_per_day = 0.2 
+contact_per_day = 0.1 
 infection_duration = 14 # days
-runs = 10
-seed = 100
+runs = 1
+seed = 145
 random.seed(seed)
+np.random.seed(seed)
 confidence_level = 0.95
 debug = False
 
@@ -17,7 +18,10 @@ def evaluate_conficence_interval(x):
         ave = x.mean()
         stddev = x.std(ddof=1)
         ci = t_treshold * stddev /np.sqrt(runs)
-        rel_err = ci/ ave
+        if ave != 0:
+            rel_err = ci/ ave
+        else:
+            rel_err = 0
         
         return (ave, ci, rel_err)
 
@@ -46,11 +50,15 @@ class Person:
         self.recovered = False
         self.last_contact = 0
         self.infection_duration = infection_duration
+        self.start_infection = -1 # the day
+        self.end_infection = -1 # the day
+        self.infected_by_days = []
 
     def get_infection(self):
         self.infected = True
         self.subsceptible = False
-        self.day_for_recovery = self.infection_duration
+        self.day_for_recovery = np.random.geometric(1/self.infection_duration)
+        self.infection_time = self.day_for_recovery
     
     def get_rid_infection(self):
         self.infected = False
@@ -70,6 +78,7 @@ class AgentBasedModel:
         self.s_t = []
         self.i_t = []
         self.r_t = []
+        self.Rt = [] # rt parameter 
         
 
     def start_disease(self):
@@ -78,20 +87,22 @@ class AgentBasedModel:
         '''
         first_infected_idx = random.randint(0, self.population - 1)
         self.person_dict[first_infected_idx].get_infection()
+        self.person_dict[first_infected_idx].start_infection = 0
         self.infected[first_infected_idx] = 1
         self.subsceptibles[first_infected_idx] = 0
         self.i_t.append(1)
         self.s_t.append(self.population - 1)
         self.r_t.append(0)
+        
     
-    def new_day(self):
+    def new_day(self, day):
         '''
         Update status according to the new day
         i.e. decrease both infection_duration and last contact
         '''
         
         for k, p in enumerate(self.person_dict.values()):
-            if p.last_contact > 0:
+            if p.last_contact >= 0:
                 p.last_contact -= 1
             if p.infected:
                 p.day_for_recovery -= 1
@@ -99,58 +110,88 @@ class AgentBasedModel:
                     p.get_rid_infection()
                     self.recovered[k] = 1
                     self.infected[k] = 0
+                    p.end_infection = day
 
     def update_trackers(self):
 
         actual_subsceptible = np.sum(self.subsceptibles)
         actual_recovered = np.sum(self.recovered) # new recovered value
-        actual_infected = self.population - np.unique(self.infected, return_counts=True)[1][0] # count how many infected
-
+        actual_infected = np.sum(self.infected) # count how many infected
         self.s_t.append(actual_subsceptible)
         self.r_t.append(actual_recovered)
         self.i_t.append(actual_infected)
+
+    def compute_rt(self):
+
+        rt = []
+        for day in range(365):
+            tot_i = 0
+            tot_p = 0
+            for person in self.person_dict.values():
+                if day > person.start_infection and day <= person.end_infection:
+                    print(f'Duration: {person.infection_time}, list: {len(person.infected_by_days)}')
+                    tot_i += person.infected_by_days.pop(0)
+                    tot_p += 1
+            if tot_p == 0:
+                rt.append(0)
+            else:
+                rt.append(tot_i/tot_p)
+        return rt
+
 
     def simulate(self):
         
         day = 0
         self.start_disease()
-        while day < 365:
+        while day < 365:            
+            
             # check the metrics
-            if day % 1000 == 0 and debug:
+            if day % 10 == 0 and debug:
                 print(f'Subsceptible: {np.sum(self.subsceptibles)}')
                 print(f'Infected: {np.sum(self.infected)}')
                 print(f'Recovered: {np.sum(self.recovered)}')
                 print(f'Day: {day}')
-
-            for k, p in enumerate(self.person_dict.values()):
-
-                if p.last_contact == 0:
-                    # he can meet someone
-                    met_idx = random.randint(0, population-1)
-                    met = self.person_dict[met_idx]
-                    if met.last_contact == 0:
-                        # update the meeting counter
-                        met.last_contact = 1 / self.contact_per_day -1 # a person every 5 days
-                        p.last_contact = 1 / self.contact_per_day -1
-                        # check whether the 2 persons are infected
-                        if met.infected and p.subsceptible:
-                            # infect the other person
-                            p.get_infection()
-                            self.subsceptibles[k] = 0
-                            self.infected[k] = 1
-                        elif p.infected and met.subsceptible:
-                            met.get_infection()
-                            self.subsceptibles[met_idx] = 0
-                            self.infected[met_idx] = 1
             
+             # indexes of infected people
+            infected_idxs = np.argwhere(self.infected==1).flatten()
+            print(len(infected_idxs))
+            for infected_id in infected_idxs:
+                infected = self.person_dict[infected_id]
+                if infected.last_contact < 0:
+                    # draw from poisson the number of contact
+                    next_contact = np.random.geometric(self.contact_per_day)
+                    # check if there is at least 1 contact
+
+                    # sample the indexes
+                    met_index = random.randint(0, population-1)
+                    met = self.person_dict[met_index]
+                    # verify that is not the same person
+                    while infected_id == met_index or met.last_contact <0:
+                        met_index = random.randint(0, population-1)
+                        met = self.person_dict[met_index]
+                        
+                        if met.subsceptible:
+                            met.get_infection()
+                            self.infected[met_index] = 1
+                            self.subsceptibles[met_index] = 0
+                            #num_infected += 1
+                # register how many person he infected in the day            
+                #infected.infected_by_days.append(num_infected)
+                            
+
+
             # update all the parameters
-            self.new_day()
-            self.update_trackers()
+            self.update_trackers()                     
 
             day += 1
 
-        #print(f'The infection lasted {day - 1} day')
-        #print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')    
+            self.new_day(day)
+
+
+        #self.Rt = self.compute_rt()
+
+        print(f'The infection lasted {np.argmin(self.i_t) - 1} day')
+        print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')    
 
 
     '''not needed anymore'''
@@ -175,6 +216,7 @@ class AgentBasedModel:
 runs_s = [] # list of s_t for each run
 runs_i = []
 runs_r = []
+Rt_dict = {} # rt for each run
 
 print(5*'#' + ' Initial setting ' + 5*'#')
 print(f'Population: {population}    seed: {seed}')
@@ -192,11 +234,13 @@ for run in range(runs):
     runs_s.append(simulator.s_t)
     runs_i.append(simulator.i_t)
     runs_r.append(simulator.r_t)
+    Rt_dict[run] = simulator.Rt
 
 # get the cis
 result_s = confidence_interval_global(runs_s)
 result_i = confidence_interval_global(runs_i)
 result_r = confidence_interval_global(runs_r)
+#rt_ci = confidence_interval_global(Rt_dict.values())
 
 
 datafile = open('Lab4/provaCI.dat', 'w')

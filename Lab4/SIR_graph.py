@@ -91,4 +91,4 @@ def prova(input_filename,output_filename):
 
 plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
 #plot_graph_SIR('Lab4/SIRmodel_agentBased2.dat', 'AB_SIR2.png')
-prova('Lab4/provaCI.dat', 'prova.png')
+prova('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
