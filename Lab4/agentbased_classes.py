@@ -59,7 +59,7 @@ class Person:
         self.subsceptible = False
         self.day_for_recovery = np.random.geometric(1/self.infection_duration) +1
         self.infection_time = self.day_for_recovery
-        self.infected_by_day = np.zeros_like(365, dtype=int)
+        self.infected_by_day = np.zeros(365, dtype=int)
     
     def get_rid_infection(self):
         self.infected = False
@@ -125,13 +125,14 @@ class AgentBasedModel:
     def compute_rt(self):
 
         rt = []
-        for day in range(365):
+        for day in range(366):
             tot_i = 0
             tot_p = 0
             for person in self.person_dict.values():
-                if day > person.start_infection and day <= person.end_infection:
-                    print(f'Duration: {person.infection_time}, list: {len(person.infected_by_days)}')
-                    tot_i += person.infected_by_days[day]
+                if day > person.start_infection and day <= person.end_infection \
+                    and not person.subsceptible:
+                    #print(f'Duration: {person.infection_time}, list: {len(person.infected_by_days)}')
+                    tot_i += person.infected_by_day[day]
                     tot_p += 1
             if tot_p == 0:
                 rt.append(0)
@@ -175,8 +176,7 @@ class AgentBasedModel:
                             
                             num_infected_today += 1
                 # register how many person he infected in the day   
-                #infected.infected_by_day[day] += num_infected_today
-                #print(infected.infected_by_day)           
+                infected.infected_by_day[day] += num_infected_today
 
 
             # update all the parameters
@@ -228,19 +228,21 @@ for run in range(runs):
         runs_s.append(simulator.s_t)
         runs_i.append(simulator.i_t)
         runs_r.append(simulator.r_t)
+        Rt_dict[run] = simulator.compute_rt()
+        
     
 
 # get the cis
 result_s = confidence_interval_global(runs_s, len(runs_s))
 result_i = confidence_interval_global(runs_i, len(runs_s))
 result_r = confidence_interval_global(runs_r, len(runs_s))
-#rt_ci = confidence_interval_global(Rt_dict.values(), len(runs_s))
-
+rt_ci = confidence_interval_global(list(Rt_dict.values()), len(runs_s))
 
 datafile = open('Lab4/simulative_SIR.dat', 'w')
 print('day\tmean(S_t)\tciLow(S_t)\tciHigh(S_t)\trelerr(S_t)' + \
     '\tmean(I_t)\tciLow(I_t)\tciHigh(I_t)\trelerr(I_t)' + \
-        '\tmean(R_t)\tciLow(R_t)\tciHigh(R_t)\trelerr(R_t)', file=datafile)
+        '\tmean(R_t)\tciLow(R_t)\tciHigh(R_t)\trelerr(R_t)' +\
+            '\tmean(RT)\tciLow(RT)\tciHigh(RT)\trelerr(RT)', file=datafile)
 
 for i in range(len(result_s)):
     print(
@@ -257,6 +259,10 @@ for i in range(len(result_s)):
         result_r[i][0] - result_r[i][1], # cilow
         result_r[i][0] + result_r[i][1], # cihigh
         result_r[i][2], # rel error
+        rt_ci[i][0], # s_t mean
+        rt_ci[i][0] - rt_ci[i][1], # cilow
+        rt_ci[i][0] + rt_ci[i][1], # cihigh
+        #rt_ci[i][2], # rel error
         sep='\t',
         file=datafile
     )

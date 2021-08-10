@@ -88,7 +88,44 @@ def prova(input_filename,output_filename):
     plt.clf()
 
 
+def plot_rt_trend(input_filename,output_filename):
+
+    days = []
+    mean = []
+    cil = []
+    cih = []
+    
+    
+    with open(input_filename,'r') as csvfile:
+        plots = csv.reader(csvfile, delimiter='\t')
+        first_line=True
+        for row in plots:
+            if first_line:
+                first_line=False
+            else:
+                days.append(int(row[0]))
+                mean.append(float(row[13]))
+                cil.append(float(row[14]))
+                cih.append(float(row[15]))
+                
+            
+    plt.plot(days, mean)
+    plt.fill_between(days, cil, cih, color='b', alpha=.1)
+    
+    #plt.plot(days, i_t, label='I(t)')
+    #plt.plot(days, r_t, label='R(t)')
+
+    plt.xlabel('Days')
+    plt.ylabel('Rt index')
+    plt.grid()
+    plt.title('Rt Trend - Simulative solution')
+    plt.legend()
+    # plt.show()
+    plt.savefig("Lab4/images/"+output_filename)
+    plt.clf()
+
 
 plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
 #plot_graph_SIR('Lab4/SIRmodel_agentBased2.dat', 'AB_SIR2.png')
 prova('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
+plot_rt_trend('Lab4/simulative_SIR.dat', 'rt_chart.png')
