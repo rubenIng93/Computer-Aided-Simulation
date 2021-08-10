@@ -15,7 +15,7 @@ np.random.seed(seed)
 random.seed(seed)
 
 
-def evaluate_conficence_interval(x):
+def evaluate_conficence_interval(x, runs):
 
     '''
     Compute the confidence interval according to the t of Student
@@ -46,7 +46,7 @@ def evaluate_conficence_interval(x):
     
     return (ave, ci, rel_err)
 
-def confidence_interval_global(lists):
+def confidence_interval_global(lists, runs):
     '''
 
     Compute the confidence interval for a list of list
@@ -69,7 +69,7 @@ def confidence_interval_global(lists):
         temp_list = []
         for _list in lists:
             temp_list.append(_list[day])
-        result.append(evaluate_conficence_interval(np.array(temp_list)))
+        result.append(evaluate_conficence_interval(np.array(temp_list), runs))
 
     return result
 
@@ -91,11 +91,14 @@ class Person:
         assert(isinstance(gamma, float))
         self.gamma = gamma
         self.last_contact = -1
+        self.num_contact = 0
+        
 
     def get_infected(self):
         self.subsceptible = False
         self.infected = True
-        self.day_to_recovery = np.random.geometric(p=self.gamma)
+        self.day_to_recovery = self.infected_day = np.random.poisson(lam=1/self.gamma) 
+
 
     def get_recovered(self):
         self.infected = False
@@ -213,7 +216,7 @@ class World:
             infected = self.person_dict[idx]
             if infected.last_contact < 0:
                 # draw from the distribution in what time he can move
-                future_contact = np.random.geometric(self.beta*2) + 1
+                future_contact = np.random.geometric(self.beta) +1
                 infected.last_contact = future_contact
                 # sample the index of a person to be infected
                 met_idx = random.randint(0, self.population-1)
@@ -224,9 +227,10 @@ class World:
                     met_idx = random.randint(0, self.population-1)
                     met = self.person_dict[met_idx]
                 # update the last contact of the met
-                future_contact = np.random.geometric(self.beta*2) + 1
+                future_contact = np.random.geometric(self.beta) +1
                 met.last_contact = future_contact
                 # check if the met can be infected
+                infected.num_contact += 1
                 if met_idx in subsceptiple_idx:
                     # infect him!
                     met.get_infected()
@@ -234,6 +238,7 @@ class World:
                     self.infected_array[met_idx] = 1
                     i_t += 1
                     s_t -= 1
+                    
         
 
         self.S_t.append(s_t)
@@ -263,7 +268,16 @@ for run in range(runs):
 
     print(5*'#'+'STATS'+5*'#')
     print(f'Max infected:   {np.max(simulator.I_t)}')
-    print(f'Reached at day: {np.argmax(simulator.I_t)}\n')    
+    print(f'Reached at day: {np.argmax(simulator.I_t)}\n')  
+
+    tot_beta = 0
+    tot_i = 0
+    for p in simulator.person_dict.values():
+        if not p.subsceptible:
+            tot_i += 1
+            tot_beta += p.num_contact / p.infected_day
+
+    print(f'Simulative Beta: {tot_beta / tot_i:.4f}\n')
 
     # avoid degenerative runs
     if np.max(simulator.I_t) < 10:
@@ -275,9 +289,9 @@ for run in range(runs):
         runs_r.append(simulator.R_t)
 
 # get the cis
-result_s = confidence_interval_global(runs_s)
-result_i = confidence_interval_global(runs_i)
-result_r = confidence_interval_global(runs_r)
+result_s = confidence_interval_global(runs_s, len(runs_s))
+result_i = confidence_interval_global(runs_i, len(runs_s))
+result_r = confidence_interval_global(runs_r, len(runs_s))
 #rt_ci = confidence_interval_global(Rt_dict.values())
 
 

@@ -4,16 +4,16 @@ from scipy.stats import t
 
 # starting parameters
 population = 10000
-contact_per_day = 0.1 
+contact_per_day = 0.2 
 infection_duration = 14 # days
-runs = 1
-seed = 145
+runs = 10
+seed = 5
 random.seed(seed)
 np.random.seed(seed)
 confidence_level = 0.95
 debug = False
 
-def evaluate_conficence_interval(x):
+def evaluate_conficence_interval(x, runs):
         t_treshold = t.ppf((confidence_level + 1) / 2, df= runs-1)
         ave = x.mean()
         stddev = x.std(ddof=1)
@@ -25,7 +25,7 @@ def evaluate_conficence_interval(x):
         
         return (ave, ci, rel_err)
 
-def confidence_interval_global(lists):
+def confidence_interval_global(lists, runs):
     '''
     Args: the list of list for each run of the simulation of S or R or I
     Returns: a vector with means, ci and relative error for each
@@ -37,7 +37,7 @@ def confidence_interval_global(lists):
         temp_list = []
         for _list in lists:
             temp_list.append(_list[day])
-        result.append(evaluate_conficence_interval(np.array(temp_list)))
+        result.append(evaluate_conficence_interval(np.array(temp_list), runs))
 
     return result
 
@@ -52,13 +52,14 @@ class Person:
         self.infection_duration = infection_duration
         self.start_infection = -1 # the day
         self.end_infection = -1 # the day
-        self.infected_by_days = []
+        self.num_infected = 0
 
     def get_infection(self):
         self.infected = True
         self.subsceptible = False
-        self.day_for_recovery = np.random.geometric(1/self.infection_duration)
+        self.day_for_recovery = np.random.geometric(1/self.infection_duration) +1
         self.infection_time = self.day_for_recovery
+        self.infected_by_day = np.zeros_like(365, dtype=int)
     
     def get_rid_infection(self):
         self.infected = False
@@ -130,7 +131,7 @@ class AgentBasedModel:
             for person in self.person_dict.values():
                 if day > person.start_infection and day <= person.end_infection:
                     print(f'Duration: {person.infection_time}, list: {len(person.infected_by_days)}')
-                    tot_i += person.infected_by_days.pop(0)
+                    tot_i += person.infected_by_days[day]
                     tot_p += 1
             if tot_p == 0:
                 rt.append(0)
@@ -154,30 +155,28 @@ class AgentBasedModel:
             
              # indexes of infected people
             infected_idxs = np.argwhere(self.infected==1).flatten()
-            print(len(infected_idxs))
             for infected_id in infected_idxs:
                 infected = self.person_dict[infected_id]
-                if infected.last_contact < 0:
-                    # draw from poisson the number of contact
-                    next_contact = np.random.geometric(self.contact_per_day)
-                    # check if there is at least 1 contact
 
-                    # sample the indexes
-                    met_index = random.randint(0, population-1)
-                    met = self.person_dict[met_index]
-                    # verify that is not the same person
-                    while infected_id == met_index or met.last_contact <0:
-                        met_index = random.randint(0, population-1)
-                        met = self.person_dict[met_index]
-                        
+                num_met_today = np.random.poisson(self.contact_per_day) 
+                num_infected_today = 0
+
+                if num_met_today > 0:
+
+                    met_idxs = random.sample(range(self.population), num_met_today)
+                    for idx in met_idxs:
+
+                        met = self.person_dict[idx]
+                        infected.num_infected += 1
                         if met.subsceptible:
                             met.get_infection()
-                            self.infected[met_index] = 1
-                            self.subsceptibles[met_index] = 0
-                            #num_infected += 1
-                # register how many person he infected in the day            
-                #infected.infected_by_days.append(num_infected)
+                            self.infected[idx] = 1
+                            self.subsceptibles[idx] = 0
                             
+                            num_infected_today += 1
+                # register how many person he infected in the day   
+                #infected.infected_by_day[day] += num_infected_today
+                #print(infected.infected_by_day)           
 
 
             # update all the parameters
@@ -191,25 +190,16 @@ class AgentBasedModel:
         #self.Rt = self.compute_rt()
 
         print(f'The infection lasted {np.argmin(self.i_t) - 1} day')
-        print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')    
+        print(f'With a peak of {np.max(self.i_t)} infected at day {np.argmax(self.i_t)}')
+        tot_beta = 0
+        tot_i = 0
+        for p in self.person_dict.values():
+            if not p.subsceptible:
+                tot_i += 1
+                tot_beta += p.num_infected / p.infection_duration
 
+        print(f'Simulative Beta: {tot_beta / tot_i:.4f}\n')    
 
-    '''not needed anymore'''
-    def generate_file(self):
-
-        datafile = open('Lab4/SIRmodel_agentBased2.dat', 'w')
-        print('day\tS_t\tI_t\tR_t\tcilow\tcih', file=datafile)
-
-        for i in range(len(self.i_t)):
-            print(
-                i, # the day
-                self.s_t[i], # s_t
-                self.i_t[i], # i_t
-                self.r_t[i], # r_t
-                sep='\t',
-                file=datafile
-            )
-        datafile.close()
 
 
 # data structures to keep all the runs
@@ -230,20 +220,24 @@ for run in range(runs):
     simulator = AgentBasedModel(population, contact_per_day, infection_duration)
     simulator.simulate()
 
-    # save all
-    runs_s.append(simulator.s_t)
-    runs_i.append(simulator.i_t)
-    runs_r.append(simulator.r_t)
-    Rt_dict[run] = simulator.Rt
+    # avoid degenerative runs
+    if np.max(simulator.i_t) < 10:
+        print('Degenerative run detected')
+    else:
+        # save all
+        runs_s.append(simulator.s_t)
+        runs_i.append(simulator.i_t)
+        runs_r.append(simulator.r_t)
+    
 
 # get the cis
-result_s = confidence_interval_global(runs_s)
-result_i = confidence_interval_global(runs_i)
-result_r = confidence_interval_global(runs_r)
-#rt_ci = confidence_interval_global(Rt_dict.values())
+result_s = confidence_interval_global(runs_s, len(runs_s))
+result_i = confidence_interval_global(runs_i, len(runs_s))
+result_r = confidence_interval_global(runs_r, len(runs_s))
+#rt_ci = confidence_interval_global(Rt_dict.values(), len(runs_s))
 
 
-datafile = open('Lab4/provaCI.dat', 'w')
+datafile = open('Lab4/simulative_SIR.dat', 'w')
 print('day\tmean(S_t)\tciLow(S_t)\tciHigh(S_t)\trelerr(S_t)' + \
     '\tmean(I_t)\tciLow(I_t)\tciHigh(I_t)\trelerr(I_t)' + \
         '\tmean(R_t)\tciLow(R_t)\tciHigh(R_t)\trelerr(R_t)', file=datafile)
