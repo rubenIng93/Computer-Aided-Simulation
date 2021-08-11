@@ -1,5 +1,5 @@
 # Computer-Aided-Simulation
-python scripts of the labs proposed at PoliTO in 2020
+python scripts of the labs proposed at PoliTO in 2020/2021
 
 - Lab1: queues
 - Lab2: bins/balls & birthday paradox

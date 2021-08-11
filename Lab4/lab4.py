@@ -37,7 +37,7 @@ while days < 365:
     days += 1 # new day
 
     if debug:
-        if days % 10 == 0:
+        if days % 30 == 0:
             print(f"DAY {days}")
             print(f"SUSCEPTIPLE PEOPLES = {int(s_t)}")
             print(f"INFECTED PEOPLES = {int(i_t)}")
@@ -50,7 +50,7 @@ while days < 365:
 
 
 i_tracker_array = np.array(i_tracker)
-print(f"The disease lasts {days} days and reachs the max infected peoples: {max(i_tracker)} at days {np.argmax(i_tracker_array)}")
+print(f"The disease lasts {np.argmin(i_tracker)} days and reachs the max infected peoples: {max(i_tracker)} at days {np.argmax(i_tracker_array)}")
 
 
 # save all in a file
