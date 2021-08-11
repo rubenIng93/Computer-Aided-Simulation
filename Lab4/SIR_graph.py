@@ -38,7 +38,7 @@ def plot_graph_SIR(input_filename,output_filename):
     plt.savefig("Lab4/images/"+output_filename)
     plt.clf()
 
-def sir_chart_ci(input_filename,output_filename):
+def sir_chart_ci(input_filename,output_filename, extension=''):
 
     days = []
     mean_s = []
@@ -60,13 +60,25 @@ def sir_chart_ci(input_filename,output_filename):
             else:
                 days.append(int(row[0]))
                 mean_s.append(float(row[1]))
-                cil_s.append(float(row[2]))
+                cil = float(row[2])
+                if cil >= 0:
+                    cil_s.append(cil)
+                else:
+                    cil_s.append(0)
                 cih_s.append(float(row[3]))
                 mean_i.append(float(row[5]))
-                cil_i.append(float(row[6]))
+                cil = float(row[6])
+                if cil >= 0:
+                    cil_i.append(cil)
+                else:
+                    cil_i.append(0)
                 cih_i.append(float(row[7]))
                 mean_r.append(float(row[9]))
-                cil_r.append(float(row[10]))
+                cil = float(row[10])
+                if cil >= 0:
+                    cil_r.append(cil)
+                else:
+                    cil_r.append(0)
                 cih_r.append(float(row[11]))
             
     plt.plot(days, mean_s, label='S(t)')
@@ -81,14 +93,15 @@ def sir_chart_ci(input_filename,output_filename):
     plt.xlabel('Days')
     plt.ylabel('Number of peoples')
     plt.grid()
-    plt.title('Disease Trend - Simulative solution')
+    plt.suptitle('Disease Trend - Simulative solution')
+    plt.title(extension)
     plt.legend()
     # plt.show()
     plt.savefig("Lab4/images/"+output_filename)
     plt.clf()
 
 
-def plot_rt_trend(input_filename,output_filename):
+def plot_rt_trend(input_filename,output_filename, extension=''):
 
     days = []
     mean = []
@@ -122,13 +135,20 @@ def plot_rt_trend(input_filename,output_filename):
     plt.xlabel('Days')
     plt.ylabel('Rt index')
     plt.grid()
-    plt.title('Rt Trend - Simulative solution')
+    plt.suptitle('Rt Trend - Simulative solution')
+    plt.title(extension)
     plt.legend()
     # plt.show()
     plt.savefig("Lab4/images/"+output_filename)
     plt.clf()
 
 
-plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
-sir_chart_ci('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
-plot_rt_trend('Lab4/simulative_SIR.dat', 'rt_chart.png')
+#plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
+#sir_chart_ci('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
+#plot_rt_trend('Lab4/simulative_SIR.dat', 'rt_chart.png')
+sir_chart_ci('Lab4/SIR_ext.dat', 'simulative_SIR_ext.png', 'without mask')
+plot_rt_trend('Lab4/SIR_ext.dat', 'rt_chart_nomask.png', 'without mask')
+sir_chart_ci('Lab4/simulative_SIRS.dat', 'SIRS_model.png', 'SIRS extension')
+plot_rt_trend('Lab4/simulative_SIRS.dat', 'rt_chart_sirs.png', 'SIRS extension')
+sir_chart_ci('Lab4/simulative_SIRS_lock.dat', 'SIRS_model_lock.png', 'SIRS extension with Lockdown')
+plot_rt_trend('Lab4/simulative_SIRS_lock.dat', 'rt_chart_sirs_lock.png', 'SIRS extension with Lockdown')
