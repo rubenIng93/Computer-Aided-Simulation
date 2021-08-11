@@ -38,7 +38,7 @@ def plot_graph_SIR(input_filename,output_filename):
     plt.savefig("Lab4/images/"+output_filename)
     plt.clf()
 
-def prova(input_filename,output_filename):
+def sir_chart_ci(input_filename,output_filename):
 
     days = []
     mean_s = []
@@ -70,11 +70,11 @@ def prova(input_filename,output_filename):
                 cih_r.append(float(row[11]))
             
     plt.plot(days, mean_s, label='S(t)')
-    plt.fill_between(days, cil_s, cih_s, color='b', alpha=.1)
+    plt.fill_between(days, cil_s, cih_s, color='b', alpha=.1, label='95% CI')
     plt.plot(days, mean_i, label='I(t)')
-    plt.fill_between(days, cil_i, cih_i, color='r', alpha=.1)
+    plt.fill_between(days, cil_i, cih_i, color='r', alpha=.1, label='95% CI')
     plt.plot(days, mean_r, label='R(t)')
-    plt.fill_between(days, cil_r, cih_r, color='g', alpha=.1)
+    plt.fill_between(days, cil_r, cih_r, color='g', alpha=.1, label='95% CI')
     #plt.plot(days, i_t, label='I(t)')
     #plt.plot(days, r_t, label='R(t)')
 
@@ -105,12 +105,16 @@ def plot_rt_trend(input_filename,output_filename):
             else:
                 days.append(int(row[0]))
                 mean.append(float(row[13]))
-                cil.append(float(row[14]))
+                low = float(row[14])
+                if low >= 0:
+                    cil.append(low)
+                else:
+                    cil.append(0)
                 cih.append(float(row[15]))
                 
             
-    plt.plot(days, mean)
-    plt.fill_between(days, cil, cih, color='b', alpha=.1)
+    plt.plot(days, mean, label='Rt (avg)')
+    plt.fill_between(days, cil, cih, color='b', alpha=.1, label='95% CI')
     
     #plt.plot(days, i_t, label='I(t)')
     #plt.plot(days, r_t, label='R(t)')
@@ -126,6 +130,5 @@ def plot_rt_trend(input_filename,output_filename):
 
 
 plot_graph_SIR('Lab4/SIRmodel_numerical.dat', 'analytical_SIR.png')
-#plot_graph_SIR('Lab4/SIRmodel_agentBased2.dat', 'AB_SIR2.png')
-prova('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
+sir_chart_ci('Lab4/simulative_SIR.dat', 'simulative_SIR.png')
 plot_rt_trend('Lab4/simulative_SIR.dat', 'rt_chart.png')
