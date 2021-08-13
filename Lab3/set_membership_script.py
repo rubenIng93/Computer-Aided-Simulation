@@ -8,6 +8,9 @@ import pandas as pd
 import random
 from scipy.stats import t
 
+##
+# SCRIPT FROM 2.2 ON (BITSTRING + BLOOM FILTER)#
+
 # read the txt file
 w = 0 # initialize the counter
 words_set = set()
@@ -15,11 +18,12 @@ epsilon = 0.5
 fake_attempt = 10
 seed = 22
 runs = 10
-debug = False
+debug = True
 # generation of the parameter x
 b = [19, 20, 21, 22, 23, 24]
 ci_level = 0.95
 runs =100
+num_hash_to_test = range(1, 33) # optional point 10
 
 def retrieve_ci(mean, stddev):
     t_treshold = t.ppf((ci_level + 1) / 2, df= runs-1)
@@ -42,6 +46,9 @@ def compute_all_hashes(md5, num_hashes, b):
         bits_to_update.append(value)
         md5 = md5 // (2**3)
     return bits_to_update
+
+
+print('#### START SIMULATION ####')
 
 
 with open("Lab3/words_alpha.txt", "r") as txt:
@@ -68,6 +75,11 @@ bloom_size_list = []
 k_opt_list = []
 theorical_fp_prob_list = []
 theoretical_bf_size_list = []
+# optional 10 data structure
+# dict with key the number of bits per fingerprint
+# and as value the list of fp probabilities 
+# for hash from 1 to 32
+bf_point_ten_dict = {x: [] for x in b}
 
 random.seed(seed)
 
@@ -94,10 +106,16 @@ for n_bits in b:
     # test prob of false positive
     bs_fp_probability = (np.sum(bit_string_array) / 2 ** n_bits) * 100 # analytical fp prob bitstring
     analytical_prob_bf = (np.sum(bloom_filter)/(2**n_bits))**k_opt # analytical fp prob bloom filter
-    ba_size = asizeof.asizeof(bit_string_array) # get the size in bytes
+    bs_size = asizeof.asizeof(bit_string_array) # get the size in bytes bitstring
     
-    bs_fp_probabilities_analytical.append(bs_fp_probability) # append in the list
-    size_list.append(ba_size/1024) # append it in order to save the output in kb
+    
+    bs_fp_probabilities_analytical.append(bs_fp_probability) # append in the list bitstring
+    size_list.append(bs_size/1024) # append it in order to save the output in kb
+
+    # optional point 10
+    for num_hash in num_hash_to_test:
+        fp_prob_by_k = (1-math.exp(-num_hash*w/(2**n_bits)))**num_hash
+        bf_point_ten_dict[n_bits].append(fp_prob_by_k*100) # append in % format
     
     run_means = np.zeros(runs) # list with means of the runs
     bf_run_means = np.zeros(runs) # list with means of the runs for BF
@@ -116,8 +134,8 @@ for n_bits in b:
             if bloom_filter[wrong_h_list].all() == 1: # all the bits are 1 in bloom filter
                 fp_bf_counter += 1 # conflitc happens
             
-        run_means[run] = fp_counter/fake_attempt # save the run's mean
-        bf_run_means[run] = fp_bf_counter/fake_attempt
+        run_means[run] = fp_counter/fake_attempt # save the run's mean bitstring
+        bf_run_means[run] = fp_bf_counter/fake_attempt # bloom filter
 
     # bitstring stast
     mean = np.mean(run_means) # get the mean of all the runs
@@ -125,6 +143,7 @@ for n_bits in b:
     ci = retrieve_ci(mean, std) # retrieve the CI
     false_positive_prob_means.append(mean*100)
     false_positive_prob_cis.append(ci*100)
+    
 
     #bloom filter stats
     mean_bf = np.mean(bf_run_means) # get the mean of all the runs
@@ -143,9 +162,10 @@ for n_bits in b:
         print('>>>BITSTRING')
         print(f'Bitstring fp for {n_bits}bits = {mean*100}% (mean value)')
         print(f'Bitstring analytical fp prob. for {n_bits} = {bs_fp_probability}%')
-        print(f'Bitstring actual size = {ba_size/1024} kb')
+        print(f'Bitstring actual size = {bs_size/1024} kb')
         
-        print('>>>BLOOM FILTER')
+        print('\n>>>BLOOM FILTER')
+        print(f'Number of optimal hash functions (k): {int(k_opt)}')
         print(f'Bloom filter analytical fp for {n_bits}bits = {analytical_prob_bf*100}% (mean value)')
         print(f'Bloom filter fp for {n_bits}bits = {mean_bf*100}% (mean value)')
         print(f'Bloom filter theory fp for {n_bits}bits = {theorical_fp_prob*100}%')
@@ -160,7 +180,9 @@ for n_bits in b:
 
 # write a file with the measures obtained
 datafile_sim = open(f"Lab3/lab3{runs}runs.dat", "w") # open an empty file
-print("#bits\tanalyticalFPBS\tciLow\tP(FP)\tciHigh\tsize(KB)\tkopt\tBFciLow\tBFp(FP)\tBFciHigh\tTHfpProb\tBFsize(KB)", file=datafile_sim)
+print("#bits\tanalyticalFPBS\tciLow\tP(FP)\tciHigh\tsize(KB)\t" + \
+        "kopt\tBFciLow\tBFp(FP)\tBFciHigh\tTHfpProb\tBFsize(KB)\tTHBFsize(KB)",\
+             file=datafile_sim)
 for i in range(len(b)):
     print(b[i], # nbits
         bs_fp_probabilities_analytical[i], # fp prob analytical approach bitstring
@@ -178,8 +200,9 @@ for i in range(len(b)):
         sep="\t", file=datafile_sim)
 datafile_sim.close()
 
+
 # display result in a pandas dataframe
-print("\nTo resume:\n")
+print("\nTo resume Bloom filters: \n")
 pd.set_option('display.float_format', lambda x: '%.8f' % x)
 df = pd.DataFrame(data={
                         'Bits per fingerprint':b,
@@ -222,6 +245,21 @@ df = pd.DataFrame(data={
 
 print(df.set_index('Storage'))
 
+# datafile for point 10
+datafile_10 = open(f"Lab3/optional10.dat", "w") # open an empty file
+one_to_32_string = ""
+for n in range(1,33):
+	one_to_32_string += '\t'+str(n)
+print("#bits\t"+one_to_32_string+"\tk_opt", file=datafile_10)
+for bits in bf_point_ten_dict.keys():
+    print(
+        bits,
+        *bf_point_ten_dict [bits],
+        k_opt_list[bits-19],
+        sep='\t',
+        file=datafile_10
+    )
+datafile_10.close()
 
 
 
