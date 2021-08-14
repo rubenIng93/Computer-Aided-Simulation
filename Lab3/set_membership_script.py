@@ -17,7 +17,6 @@ words_set = set()
 epsilon = 0.5
 fake_attempt = 10
 seed = 22
-runs = 10
 debug = True
 # generation of the parameter x
 b = [19, 20, 21, 22, 23, 24]
@@ -68,6 +67,7 @@ start = time.time()
 false_positive_prob_means = []
 false_positive_prob_cis = []
 bs_fp_probabilities_analytical = []
+bs_theo_size_list = []
 bf_false_positive_prob_means = []
 bf_false_positive_prob_cis = []
 size_list = []
@@ -107,10 +107,11 @@ for n_bits in b:
     bs_fp_probability = (np.sum(bit_string_array) / 2 ** n_bits) * 100 # analytical fp prob bitstring
     analytical_prob_bf = (np.sum(bloom_filter)/(2**n_bits))**k_opt # analytical fp prob bloom filter
     bs_size = asizeof.asizeof(bit_string_array) # get the size in bytes bitstring
-    
+    bs_theo_size = 2**n_bits/8/1024
     
     bs_fp_probabilities_analytical.append(bs_fp_probability) # append in the list bitstring
-    size_list.append(bs_size/1024) # append it in order to save the output in kb
+    size_list.append(bs_size/1024) # append it in order to save the output in kb actual bitstring
+    bs_theo_size_list.append(bs_theo_size)
 
     # optional point 10
     for num_hash in num_hash_to_test:
@@ -202,12 +203,25 @@ datafile_sim.close()
 
 
 # display result in a pandas dataframe
+print("\nTo resume bit-string array: \n")
+pd.set_option('display.float_format', lambda x: '%.8f' % x)
+df = pd.DataFrame(data={
+                        'Bits per fingerprint':b,
+                        'Theo Prob. false positive [%]':bs_fp_probabilities_analytical,
+                        'Sim Prob. false positive [%]': false_positive_prob_means,
+                        'Min theoretical memory [KB]':bs_theo_size_list,
+                        'Actual memory [KB]':size_list}
+                )
+
+print(df.set_index('Bits per fingerprint'))
+
 print("\nTo resume Bloom filters: \n")
 pd.set_option('display.float_format', lambda x: '%.8f' % x)
 df = pd.DataFrame(data={
                         'Bits per fingerprint':b,
                         'Optimal # hash functions:':k_opt_list,
-                        'Prob. false positive [%]':theorical_fp_prob_list,
+                        'Theo Prob. false positive [%]':theorical_fp_prob_list,
+                        'Sim Prob. false positive [%]': bf_false_positive_prob_means,
                         'Min theoretical memory [KB]':theoretical_bf_size_list,
                         'Actual memory [KB]':bloom_size_list}
                 )
