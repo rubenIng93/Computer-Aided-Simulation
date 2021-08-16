@@ -67,7 +67,7 @@ def plot_size_graph(input_filename,output_filename, bloom_filter=False):
             
     plt.plot(b, size, marker='.')
     plt.xlabel('Number of bit used for the bit-string')
-    plt.ylabel('Actual storage size [kb]')
+    plt.ylabel('Actual storage size [KB]')
     plt.grid()
     if bloom_filter:
         title = "Actual storage vs #bits used - Bloom Filter"
@@ -137,10 +137,12 @@ def plot_kopt_vs_bits(input_filename,output_filename):
                 b.append(int(row[0]))
                 k_opt.append(float(row[6]))                
             
-    plt.plot(b, k_opt, marker='.')
+    bars = plt.bar(b, k_opt)
+    for bar in bars:
+        yval = bar.get_height() 
+        plt.text(bar.get_x() +.25, yval+.5, yval)
     plt.xlabel('Number of bit used for the bit-string')
     plt.ylabel('Number of optimal hash functions')
-    plt.grid()
     title = "Optimal number of hash function to minimize P(FP)"
     plt.title('When storing 370103 english words')
     plt.suptitle(title)
