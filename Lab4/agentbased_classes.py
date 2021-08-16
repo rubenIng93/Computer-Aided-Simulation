@@ -88,7 +88,7 @@ class Person:
     '''
 
     def __init__(self, infection_duration):
-        self.subsceptible = True 
+        self.susceptible = True 
         self.infected = False
         self.recovered = False
         self.infection_duration = infection_duration
@@ -98,7 +98,7 @@ class Person:
 
     def get_infection(self):
         self.infected = True
-        self.subsceptible = False
+        self.susceptible = False
         self.day_for_recovery = np.random.geometric(1/self.infection_duration) +1
         self.infection_time = self.day_for_recovery
         self.infected_by_day = np.zeros(365, dtype=int)
@@ -131,9 +131,9 @@ class AgentBasedModel:
         self.contact_per_day = contact_per_day
         self.infection_duration = infection_duration
         ### Boolean arrays to easily compute statistics exploiting numpy's methods
-        self.subsceptibles = np.ones(population, dtype=bool)
-        self.infected = np.zeros_like(self.subsceptibles, dtype=bool)
-        self.recovered = np.zeros_like(self.subsceptibles, dtype=bool)
+        self.susceptibles = np.ones(population, dtype=bool)
+        self.infected = np.zeros_like(self.susceptibles, dtype=bool)
+        self.recovered = np.zeros_like(self.susceptibles, dtype=bool)
         # dict that keeps all the individuals
         self.person_dict = {k:Person(infection_duration) for k in range(population)}
         # lists aimed to track the evolution of the parameters according to days
@@ -151,7 +151,7 @@ class AgentBasedModel:
         self.person_dict[first_infected_idx].get_infection()
         self.person_dict[first_infected_idx].start_infection = 0
         self.infected[first_infected_idx] = 1
-        self.subsceptibles[first_infected_idx] = 0
+        self.susceptibles[first_infected_idx] = 0
         self.i_t.append(1)
         self.s_t.append(self.population - 1)
         self.r_t.append(0)
@@ -178,10 +178,10 @@ class AgentBasedModel:
         Register in the data structures the new values for each parameters
         '''
 
-        actual_subsceptible = np.sum(self.subsceptibles)
+        actual_susceptible = np.sum(self.susceptibles)
         actual_recovered = np.sum(self.recovered) # new recovered value
         actual_infected = np.sum(self.infected) # count how many infected
-        self.s_t.append(actual_subsceptible)
+        self.s_t.append(actual_susceptible)
         self.r_t.append(actual_recovered)
         self.i_t.append(actual_infected)
 
@@ -199,7 +199,7 @@ class AgentBasedModel:
             tot_infectors_today = 0
             for person in self.person_dict.values():
                 if day >= person.start_infection and day <= person.end_infection \
-                    and not person.subsceptible:
+                    and not person.susceptible:
                     
                     # slice the infection list of each person according to the day
                     infected_by_current_day = person.infected_by_day[day:]
@@ -228,7 +228,7 @@ class AgentBasedModel:
         tot_beta = 0.0
         tot_i = 0.0
         for p in self.person_dict.values():
-            if not p.subsceptible:
+            if not p.susceptible:
                 tot_i += 1
                 tot_beta += p.num_infected / p.infection_duration
 
@@ -256,7 +256,7 @@ class AgentBasedModel:
             
             # check the metrics
             if day % 10 == 0 and debug:
-                print(f'Subsceptible: {np.sum(self.subsceptibles)}')
+                print(f'susceptible: {np.sum(self.susceptibles)}')
                 print(f'Infected: {np.sum(self.infected)}')
                 print(f'Recovered: {np.sum(self.recovered)}')
                 print(f'Day: {day}')
@@ -279,11 +279,11 @@ class AgentBasedModel:
                         met = self.person_dict[idx]
                         # update the number of infected for the "infectors"
                         infected.num_infected += 1
-                        # register the infection in met is subsceptible
-                        if met.subsceptible:
+                        # register the infection in met is susceptible
+                        if met.susceptible:
                             met.get_infection()
                             self.infected[idx] = 1
-                            self.subsceptibles[idx] = 0
+                            self.susceptibles[idx] = 0
                             met.start_infection = day
                             num_infected_today += 1
                 # register how many person he infected in the day   
