@@ -179,8 +179,8 @@ def plot_optional10(input_filename,output_filename):
     for bits in fp_prob.keys():
         plt.plot(range(1,33), fp_prob[bits], marker='.', label=f'{bits}-bits')
     for bits in fp_prob.keys():
-        plt.plot(argmin(fp_prob[bits])+1, min(fp_prob[bits]), marker='|', label='Min Theory', color='r')
-        plt.plot(k[bits-19], fp_prob[bits][k[bits-19]-1], marker='x', label='Min Simulated', color='y')
+        plt.scatter(argmin(fp_prob[bits])+1, min(fp_prob[bits]), marker='|', label='Min Theory', color='r', s=140)
+        plt.scatter(k[bits-19], fp_prob[bits][k[bits-19]-1], marker='x', label='Min Simulated', color='m', s=140)
     
     plt.xlabel('Number of hashes')
     plt.ylabel('Probability of False Positive [%]')
